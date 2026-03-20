@@ -101,30 +101,43 @@
             Plus: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         };
 
-
-        const extractTextFromFile = async (file) => {
+       const extractTextFromFile = async (file) => {
             const ext = file.name.split('.').pop().toLowerCase();
             try {
                 if (ext === 'pdf') {
                     const arrayBuffer = await file.arrayBuffer();
+                    // Usamos Uint8Array y configuración de streaming para no saturar la memoria
                     const pdf = await pdfjsLib.getDocument({ 
                         data: new Uint8Array(arrayBuffer),
                         disableAutoFetch: true,
                         disableStream: false 
                     }).promise;
                     
-                    let text = "";
-                    // Procesamos todas las páginas sin límite, pero con gestión de memoria
+                    let fullText = "";
+                    // Procesamos todas las páginas disponibles
                     for (let i = 1; i <= pdf.numPages; i++) {
                         const page = await pdf.getPage(i);
                         const content = await page.getTextContent();
-                        text += content.items.map(item => item.str).join(' ') + "\n";
-                        // Limpiamos la referencia de la página para liberar RAM inmediatamente
-                        page._pageIndex = null; 
+                        
+                        // Solo añadimos texto si la página tiene contenido real
+                        if (content.items.length > 0) {
+                            fullText += content.items.map(item => item.str).join(' ') + "\n";
+                        }
+                        
+                        // IMPORTANTE: Liberamos la memoria de la página inmediatamente
+                        // para evitar errores de corrupción por exceso de RAM
+                        page._pageIndex = null;
+                        
+                        // Limitamos el texto total a 100.000 caracteres para no romper el límite del modelo
+                        if (fullText.length > 100000) {
+                            fullText += "\n[...Aviso: Documento truncado al alcanzar el límite de procesamiento de la IA...]";
+                            break;
+                        }
                     }
-                    return text;
+                    return fullText;
                 } else if (ext === 'docx') {
-                    const res = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+                    const arrayBuffer = await file.arrayBuffer();
+                    const res = await mammoth.extractRawText({ arrayBuffer });
                     return res.value;
                 } else if (ext === 'xlsx' || ext === 'xls') {
                     const wb = XLSX.read(await file.arrayBuffer());
@@ -133,11 +146,12 @@
                     return text;
                 }
             } catch (e) { 
-                console.error("Error completo de lectura:", e);
-                return `[Error crítico procesando ${file.name}: ${e.message}]`; 
+                console.error("Error en extractTextFromFile:", e);
+                return `[Error crítico procesando ${file.name}: El archivo podría estar protegido o corrupto]`; 
             }
             return "";
         };
+
 
         const App = () => {
             const [activeTab, setActiveTab] = useState('dashboard');
@@ -209,21 +223,32 @@
                 } catch(e) { alert(e.message); } finally { setLoading(false); }
             };
 
+
             const procesarMision = async () => {
                 if(!apiKey) return setActiveTab('settings');
                 if(!peticion.trim()) return;
                 setLoading(true); setResultado('');
                 const hoy = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+                
                 try {
-                    setStatusMsg("Red de Seguridad: Validando datos...");
+                    // 1. EXTRAER TEXTO DE TODOS LOS ARCHIVOS PRIMERO
+                    setStatusMsg("Leyendo documentos adjuntos...");
                     let contextDoc = "";
-                    for(const f of archivos) contextDoc += `\n- ARCHIVO ADJUNTO: ${f.name}\n${await extractTextFromFile(f)}\n`;
-
-                    const planningPrompt = `HOY ES: ${hoy}. PETICIÓN: "${peticion}". 
-                    Agentes disponibles: ${JSON.stringify(agents.map(a=>a.nombre))}. Plantillas: ${JSON.stringify(templates.map(t=>t.nombre))}. 
-                    EVALUACIÓN ESTRICTA: Selecciona SOLO a los agentes que sean indispensables. Si la tarea la puede hacer 1 solo agente, selecciona SOLO 1. MÁXIMO ABSOLUTO 5. No añadas agentes cuyo perfil no aporte valor directo.
-                    RESPONDE SOLO ESTE JSON: {"valid":boolean, "error_msg":"string", "selected_agents":["nombre1"], "plantilla":"nombre", "internet":boolean, "query":"string"}`;
-
+                    for(const f of archivos) {
+                        const textoArchivo = await extractTextFromFile(f);
+                        contextDoc += `\n--- DOCUMENTO: ${f.name} ---\n${textoArchivo}\n`;
+                    }
+                    
+                    // 2. PLANIFICACIÓN: Enviamos el resumen del documento al Orquestador
+                    setStatusMsg("Orquestando especialistas...");
+                    const planningPrompt = `HOY ES: ${hoy}. 
+                    PETICIÓN DEL USUARIO: "${peticion}". 
+                    DOCUMENTACIÓN ADJUNTA (Resumen): ${contextDoc.substring(0, 8000)}... 
+                    Agentes disponibles: ${JSON.stringify(agents.map(a=>a.nombre))}. 
+                    
+                    EVALUACIÓN: Analiza la misión y la documentación. Selecciona SOLO los agentes (máximo 5) cuya especialidad sea necesaria para resolver esto.
+                    RESPONDE SOLO CON ESTE JSON: {"valid":boolean, "error_msg":"string", "selected_agents":["nombre1", "nombre2"], "plantilla":"nombre", "internet":boolean, "query":"string"}`;
+                    
                     const planningRes = await callGemini(planningPrompt, aiModel);
                     const decision = JSON.parse(planningRes.match(/\{[\s\S]*\}/)[0]);
                     
@@ -232,61 +257,57 @@
                         setLoading(false); return;
                     }
 
-                    let internet = "";
+                    // 3. BÚSQUEDA EN INTERNET (Si es necesaria)
+                    let internetData = "";
                     if(decision.internet) {
-                        setStatusMsg(`Mejora Activa: Consultando red global (${hoy})...`);
-                        internet = await callGemini(`DATOS REALES Y ACTUALIZADOS A FECHA ${hoy} SOBRE: ${decision.query}`, aiModel, true);
+                        setStatusMsg(`Consultando red global (${hoy})...`);
+                        internetData = await callGemini(`DATOS ACTUALES SOBRE: ${decision.query}`, aiModel, true);
                     }
 
+                    // 4. EJECUCIÓN DEL ENJAMBRE (Cada agente aporta su visión)
                     let swarmContributions = "";
                     for (const agName of decision.selected_agents.slice(0, 5)) {
                         const ag = agents.find(a => a.nombre === agName) || agents[0];
-                        setStatusMsg(`Agente [${ag.nombre}] trabajando...`);
-                        const agentPrompt = `CONTEXTO: ${internet}. DOCUMENTOS: ${contextDoc}. PETICION: ${peticion}. ROL: ${ag.instrucciones}. 
-                        Tarea: Proporciona tu análisis experto técnico para la misión desde tu especialidad. Responde directo y sin saludos.`;
+                        setStatusMsg(`Agente [${ag.nombre}] procesando...`);
+                        const agentPrompt = `DATOS RED: ${internetData}. DOCUMENTOS: ${contextDoc}. PETICION: ${peticion}. ROL: ${ag.instrucciones}. 
+                        Tarea: Analiza los documentos y datos de red desde tu especialidad y aporta información clave para el informe. Sé técnico, directo y sin saludos.`;
                         const contribution = await callGemini(agentPrompt, aiModel);
-                        swarmContributions += `\n--- ANALISIS DE ${ag.nombre} ---\n${contribution}\n`;
+                        swarmContributions += `\n--- ANÁLISIS DE ${ag.nombre} ---\n${contribution}\n`;
                     }
 
+                    // 5. REDACCIÓN FINAL
                     const tp = templates.find(t=>t.nombre===decision.plantilla) || templates[0];
                     setInfoOrquestador({ agentes: decision.selected_agents.join(", "), plantilla: tp.nombre, internet: decision.internet ? 'Sí' : 'No' });
 
-                    setStatusMsg("Ensamblando informe final...");
+                    setStatusMsg("Redactando informe final...");
                     const finalPrompt = `
-                    ESTRICTAMENTE OBLIGATORIO:
-                    1. Has recibido análisis técnicos de los siguientes especialistas: ${decision.selected_agents.join(", ")}.
-                    2. DEBES integrar las perspectivas de CADA UNO de ellos en el informe final. No ignores ninguna aportación.
-                    3. Usa este FORMATO DE SALIDA: ${tp.descripcion}.
-                    4. EJEMPLO DE ESTILO: ${tp.ejemplo || ''}
-                    5: PROHIBIDO USAR COLORES CLAROS (Gris, Blanco, Celeste) PARA EL TEXTO. 
-                    6: EL TEXTO DEBE SER SIEMPRE NEGRO (#000000) O AZUL OSCURO (#1e3a8a) SOBRE FONDO BLANCO.
+                    FECHA: ${hoy}.
+                    APORTACIONES DEL ENJAMBRE: ${swarmContributions}.
+                    FORMATO REQUERIDO: ${tp.descripcion}.
                     
-                    DATOS DE LOS ESPECIALISTAS (Materia Prima):
-                    ${swarmContributions}
-
-                    PETICION DEL CLIENTE: ${peticion}. 
-
-                    INSTRUCCIONES FINALES: Unifica todo.
-                    REGLA 1: PRIORIZA DATOS TÉCNICOS.
-                    REGLA 2: SIN INTRODUCCIONES.
-                    REGLA 3: SALIDA EN HTML SEMÁNTICO (<h1>, <p>, <table>, etc).
-                    REGLA 4: ESTRICTAMENTE PROHIBIDO usar estilos CSS en línea (NO uses style="color:..."). La plataforma aplicará los colores sola.`;               
+                    INSTRUCCIONES:
+                    1. Unifica todas las aportaciones en un informe profesional único.
+                    2. DEBE SER DE COLOR NEGRO O AZUL OSCURO. PROHIBIDO USAR OTROS COLORES.
+                    3. No menciones a los agentes, solo el contenido.
+                    4. HTML SEMÁNTICO (tablas, h1, h2, h3, p).`;
                     
                     const res = await callGemini(finalPrompt, aiModel);
                     setResultado(res.replace(/```html/g, '').replace(/```/g, '').trim());
-
+                    
+                    // Guardar en historial con referencia a archivos
                     setPeticionHistory(p=>[{
                         id: Date.now(), 
                         texto: peticion, 
-                        archivos: archivos.map(f => f.name), // Guardamos los nombres de los archivos
-                        desc: '['+new Date().toLocaleString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+'] ' + (archivos.length > 0 ? `(${archivos.length} adjuntos) ` : '') + peticion.substring(0,60)+'...'
-                    }, ...p].slice(0,20));
+                        desc: '[' + new Date().toLocaleString('es-ES', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) + '] ' + (archivos.length > 0 ? `📎 ${archivos.length} archivos | ` : '') + peticion.substring(0,40)+'...'
+                    }, ...p].slice(0, 20));
                     
-                    // Y justo después, vaciamos la cola de archivos subidos
-                    setArchivos([]); 
-
+                    setArchivos([]); // Limpiamos los archivos tras usar la misión
                     uploadToCloud(true);
-                } catch(e) { alert(e.message); } finally { setLoading(false); setStatusMsg(''); }
+                } catch(e) { 
+                    alert("Error en la misión: " + e.message); 
+                } finally { 
+                    setLoading(false); setStatusMsg(''); 
+                }
             };
 
             const uploadToCloud = useCallback(async (isAuto = false) => {
@@ -433,8 +454,18 @@
                                                     <button onClick={exportPDF} className="text-[8px] font-black bg-red-900/30 hover:bg-red-900/50 text-red-400 px-2 py-1.5 rounded border border-red-500/30 uppercase">PDF</button>
                                                     <button onClick={exportExcel} className="text-[8px] font-black bg-green-900/30 hover:bg-green-900/50 text-green-400 px-2 py-1.5 rounded border border-green-500/30 uppercase">Excel</button>
                                                     <button onClick={exportWord} className="text-[8px] font-black bg-blue-900/30 hover:bg-blue-900/50 text-blue-400 px-2 py-1.5 rounded border border-blue-500/30 uppercase">Word</button>
-                                                    <button onClick={handlePrint} className="text-[8px] font-black bg-purple-900/30 hover:bg-purple-900/50 text-purple-400 px-2 py-1.5 rounded border border-purple-500/30 uppercase">Imprimir</button>
-                                            </div>                                            
+                                                    <button onClick={()=>{
+                                                        const c=document.querySelector('.ai-output-container').innerHTML;
+                                                        const printDiv=document.createElement('div');
+                                                        printDiv.id='print-temp';
+                                                        printDiv.style.position='absolute';printDiv.style.left='0';printDiv.style.top='0';printDiv.style.width='100%';
+                                                        printDiv.innerHTML='<style>body{color:black!important;} table{border:1px solid black; border-collapse:collapse;} td,th{border:1px solid black; padding:8px;}</style>'+c;
+                                                        document.body.appendChild(printDiv);
+                                                        window.print();
+                                                        document.body.removeChild(printDiv);
+                                                    }} className="...">Imprimir</button>
+
+                                                </div>                                            
                                         </div>
                                         <div className="ai-output-container" dangerouslySetInnerHTML={{ __html: resultado }}></div>
                                     </div>
