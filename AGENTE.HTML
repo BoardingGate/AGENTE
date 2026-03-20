@@ -12,7 +12,7 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Librerías de Documentos -->
+    <!-- Procesamiento de Documentos -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -25,7 +25,6 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #111; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
         input, select, textarea { background: #1e293b; border: 1px solid #334155; color: white; border-radius: 6px; padding: 8px; transition: all 0.2s; }
-        input:focus, select:focus, textarea:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -37,13 +36,19 @@
         const { useState, useEffect, useMemo, useRef } = React;
         const { createRoot } = ReactDOM;
 
-        // --- LÓGICA DE LICENCIA Y SEGURIDAD REUTILIZADA ---
+        // --- CONSTANTES REUTILIZADAS ---
+        const DEFAULT_AI_MODELS = [
+            "gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-1.5-flash",
+            "gemini-3.1-pro-preview", "gemini-3-pro-preview", "gemini-3-flash-preview"
+        ];
+
+        // --- LÓGICA DE SEGURIDAD Y ENCRIPTACIÓN (BOLSA) ---
         const _0x7a2=k=>{let x=Object.values(new Intl.DateTimeFormat('es').formatToParts(new Date())).filter(p=>['year','month','day'].includes(p.type)).reduce((a,c)=>a+~~c.value,0)*new Date().getDate();return k==x||k==x.toString(16).toUpperCase()};
         const _0x8f = (k) => { try { const _d = new Date(); const _v = Object.values(new Intl.DateTimeFormat('es').formatToParts(_d)).filter(p => ['day', 'month', 'year'].includes(p.type)).reduce((a, b) => a + parseInt(b.value), 0) * _d.getDate(); return k === _v.toString(16).toUpperCase(); } catch { return false; } }; 
         const _0xL = '__sys_reg_st'; const _0xT = 'ACTIVATED_V3_SECURE';
 
-        const simpleEncrypt = (text) => { if(!text) return ''; try { return btoa(text.split('').map((c, i) => String.fromCharCode(c.charCodeAt(0) + (i % 5))).join('')); } catch { return text; } };
-        const simpleDecrypt = (text) => { if(!text) return ''; try { return atob(text).split('').map((c, i) => String.fromCharCode(c.charCodeAt(0) - (i % 5))).join(''); } catch { return text; } };
+        const simpleEncrypt = (t) => { if(!t) return ''; try { return btoa(t.split('').map((c, i) => String.fromCharCode(c.charCodeAt(0) + (i % 5))).join('')); } catch { return t; } };
+        const simpleDecrypt = (t) => { if(!t) return ''; try { return atob(t).split('').map((c, i) => String.fromCharCode(c.charCodeAt(0) - (i % 5))).join(''); } catch { return t; } };
 
         const usePersistentState = (key, initialValue) => {
             const [state, setState] = useState(() => { try { const item = window.localStorage.getItem(key); return item ? JSON.parse(item) : initialValue; } catch { return initialValue; } });
@@ -62,19 +67,11 @@
             Alert: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>,
             Eye: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>,
             Refresh: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" className={p.className}><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>,
-            Loader: (p) => <svg className="animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="18" height="18"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            Loader: (p) => <svg className="animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="18" height="18"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>,
+            Globe: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
         };
 
-        const DEFAULT_AI_MODELS = [
-            "gemini-2.0-flash-exp",
-            "gemini-1.5-pro",
-            "gemini-1.5-flash",
-            "gemini-3.1-pro-preview",
-            "gemini-3-pro-preview",
-            "gemini-3-flash-preview"
-        ];
-
-        // --- EXTRACCIÓN DE TEXTO MULTIFORMATO ---
+        // --- EXTRACCIÓN DE TEXTO ---
         const extractText = async (file) => {
             const ext = file.name.split('.').pop().toLowerCase();
             try {
@@ -96,73 +93,46 @@
                     const arrayBuffer = await file.arrayBuffer();
                     const workbook = XLSX.read(arrayBuffer);
                     let text = "";
-                    workbook.SheetNames.forEach(sheet => {
-                        text += `--- Hoja: ${sheet} ---\n` + XLSX.utils.sheet_to_txt(workbook.Sheets[sheet]) + "\n";
-                    });
+                    workbook.SheetNames.forEach(sheet => { text += XLSX.utils.sheet_to_txt(workbook.Sheets[sheet]) + "\n"; });
                     return text;
                 }
-            } catch (e) { return `Error procesando ${file.name}: ${e.message}`; }
+            } catch (e) { return `Error: ${e.message}`; }
             return "";
         };
 
-        // --- COMPONENTE MODAL ---
-        const Modal = ({ isOpen, title, onClose, children, size = "md" }) => {
-            if (!isOpen) return null;
-            return (
-                <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={onClose}>
-                    <div className={`bg-slate-900 border border-slate-700 w-full ${size === 'lg' ? 'max-w-4xl' : 'max-w-xl'} rounded-2xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden`} onClick={e => e.stopPropagation()}>
-                        <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-                            <h3 className="text-lg font-bold text-white">{title}</h3>
-                            <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
-                        </div>
-                        <div className="p-6 overflow-y-auto custom-scrollbar">{children}</div>
-                    </div>
-                </div>
-            );
-        };
-
-        // --- COMPONENTE PRINCIPAL ---
+        // --- APP ---
         const App = () => {
-            // Ajustes Globales (Mantenidos de Bolsa)
-            const [apiKey, setApiKey] = usePersistentState('bg_agents_api_key', '');
-            const [gScriptUrl, setGScriptUrl] = usePersistentState('bg_agents_gscript_url', '');
-            const [aiModel, setAiModel] = usePersistentState('bg_agents_ai_model', DEFAULT_AI_MODELS[0]);
-            const [availableModels, setAvailableModels] = usePersistentState('bg_agents_models_list', DEFAULT_AI_MODELS);
-            const [appPin, setAppPin] = usePersistentState('bg_agents_app_pin', '');
+            const [apiKey, setApiKey] = usePersistentState('bg_ag_api_key', '');
+            const [gScriptUrl, setGScriptUrl] = usePersistentState('bg_ag_gs_url', '');
+            const [aiModel, setAiModel] = usePersistentState('bg_ag_model', DEFAULT_AI_MODELS[0]);
+            const [availableModels, setAvailableModels] = usePersistentState('bg_ag_models_list', DEFAULT_AI_MODELS);
+            const [appPin, setAppPin] = usePersistentState('bg_ag_pin', '');
             const [_s_st, _s_set] = usePersistentState(_0xL, '');
-            const [localTimestamp, setLocalTimestamp] = usePersistentState('bg_agents_local_ts', 0);
+            const [localTimestamp, setLocalTimestamp] = usePersistentState('bg_ag_ts', 0);
             
-            // Datos de la App (Multi-Agente)
-            const [agents, setAgents] = usePersistentState('bg_agents_data', [{id: 1, nombre: 'Asistente General', instrucciones: 'Eres un experto analista de documentos. Tu objetivo es resumir y responder con precisión.'}]);
-            const [templates, setTemplates] = usePersistentState('bg_templates_data', [{id: 1, nombre: 'Resumen Ejecutivo', descripcion: 'Estructura la salida con un resumen, puntos clave y conclusiones.', ejemplo: ''}]);
+            const [agents, setAgents] = usePersistentState('bg_ag_agents', [{id: 1, nombre: 'Analista Senior', instrucciones: 'Eres un analista experto.'}]);
+            const [templates, setTemplates] = usePersistentState('bg_ag_temps', [{id: 1, nombre: 'Informe', descripcion: 'Formato informe.', ejemplo: ''}]);
             
-            // Estado de UI
             const [activeTab, setActiveTab] = useState('dashboard');
             const [isPinLocked, setIsPinLocked] = useState(!!appPin);
             const [enteredPin, setEnteredPin] = useState('');
             const [loading, setLoading] = useState(false);
             const [statusMsg, setStatusMsg] = useState('');
+            const [testStatus, setTestStatus] = useState(null);
             const [syncStatus, setSyncStatus] = useState('idle');
 
-            // Consola de ejecución
             const [peticion, setPeticion] = useState('');
             const [archivos, setArchivos] = useState([]);
             const [resultado, setResultado] = useState('');
 
             const _0xAuth = useMemo(() => _s_st === _0xT, [_s_st]);
 
-            // --- LLAMADA A GEMINI ---
+            // --- LLAMADA API ---
             const callGemini = async (prompt, model, useSearch = false) => {
-                const body = {
-                    contents: [{ parts: [{ text: prompt }] }]
-                };
-                if (useSearch) {
-                    body.tools = [{ google_search: {} }];
-                }
-
+                const body = { contents: [{ parts: [{ text: prompt }] }] };
+                if (useSearch) body.tools = [{ google_search: {} }];
                 const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
                 const data = await resp.json();
@@ -170,124 +140,89 @@
                 return data.candidates[0].content.parts[0].text;
             };
 
-            // --- ORQUESTADOR INTELIGENTE ---
-            const procesarOrquestador = async () => {
-                if (!apiKey) return alert("Introduce tu API Key en Ajustes");
+            const testConnection = async () => {
+                if(!apiKey) return alert("Introduce una clave.");
+                setTestStatus('loading');
+                try { await callGemini("Hola", aiModel); setTestStatus('success'); }
+                catch(e) { setTestStatus('error'); alert(e.message); }
+            };
+
+            const procesar = async () => {
+                if(!apiKey) return setActiveTab('settings');
                 setLoading(true); setResultado('');
                 try {
-                    // 1. Ingesta
-                    setStatusMsg("Leyendo documentos subidos...");
+                    setStatusMsg("Procesando documentos...");
                     let contextDoc = "";
-                    for (const f of archivos) {
-                        const t = await extractText(f);
-                        contextDoc += `\n--- ARCHIVO: ${f.name} ---\n${t}\n`;
-                    }
+                    for(const f of archivos) contextDoc += `\n- ARCHIVO: ${f.name}\n${await extractText(f)}\n`;
 
-                    // 2. Triaje (Orquestador decide Agente y Plantilla)
-                    setStatusMsg("El Orquestador está eligiendo el equipo de agentes...");
-                    const routerPrompt = `
-                        Eres un Orquestador de IA de alto nivel.
-                        PETICIÓN DEL USUARIO: "${peticion}"
-                        AGENTES DISPONIBLES: ${JSON.stringify(agents.map(a => a.nombre))}
-                        PLANTILLAS DISPONIBLES: ${JSON.stringify(templates.map(t => t.nombre))}
-                        
-                        Tu tarea es decidir quién procesa esto y bajo qué formato.
-                        REGLA DE BÚSQUEDA: Si la petición requiere datos actuales (precios de hoy, noticias, leyes recientes), marca 'necesitaInternet' como true.
-                        
-                        RESPONDE SÓLO EN JSON:
-                        {
-                            "agente": "Nombre del agente",
-                            "plantilla": "Nombre de la plantilla",
-                            "necesitaInternet": boolean,
-                            "busqueda": "término de búsqueda si aplica"
-                        }
-                    `;
+                    setStatusMsg("Orquestador decidiendo ruta...");
+                    const routerPrompt = `Analiza: "${peticion}". Agentes: ${JSON.stringify(agents.map(a=>a.nombre))}. Plantillas: ${JSON.stringify(templates.map(t=>t.nombre))}. Responde JSON: {"agente":"nombre","plantilla":"nombre","internet":boolean,"busqueda":"query"}`;
                     const routerRes = await callGemini(routerPrompt, aiModel);
                     const decision = JSON.parse(routerRes.match(/\{[\s\S]*\}/)[0]);
 
-                    // 3. Agente de Búsqueda (si aplica)
-                    let internetInfo = "";
-                    if (decision.necesitaInternet) {
-                        setStatusMsg("Agente de Búsqueda consultando la red...");
-                        internetInfo = await callGemini(`Recopila información actualizada sobre: ${decision.busqueda}`, aiModel, true);
+                    let internet = "";
+                    if(decision.internet){
+                        setStatusMsg("Buscando en la red...");
+                        internet = await callGemini(`Información sobre: ${decision.busqueda}`, aiModel, true);
                     }
 
-                    // 4. Ejecución Agente Especialista
-                    setStatusMsg(`Ejecutando Agente: ${decision.agente}...`);
-                    const selectedAgent = agents.find(a => a.nombre === decision.agente) || agents[0];
-                    const selectedTemplate = templates.find(t => t.nombre === decision.plantilla) || templates[0];
-
-                    const finalPrompt = `
-                        ROL: ${selectedAgent.instrucciones}
-                        
-                        CONTEXTO DOCUMENTAL:
-                        ${contextDoc}
-                        
-                        CONTEXTO INTERNET:
-                        ${internetInfo}
-                        
-                        FORMATO DE SALIDA REQUERIDO:
-                        Nombre: ${selectedTemplate.nombre}
-                        Descripción: ${selectedTemplate.descripcion}
-                        ${selectedTemplate.ejemplo ? `Modelo de ejemplo a imitar: ${selectedTemplate.ejemplo}` : ''}
-                        
-                        PETICIÓN FINAL DEL USUARIO:
-                        "${peticion}"
-                        
-                        Instrucción: Genera un resultado detallado, profesional y refinado.
-                    `;
-
-                    const finalRes = await callGemini(finalPrompt, aiModel);
+                    setStatusMsg(`Agente ${decision.agente} trabajando...`);
+                    const ag = agents.find(a=>a.nombre===decision.agente) || agents[0];
+                    const tp = templates.find(t=>t.nombre===decision.plantilla) || templates[0];
+                    const finalRes = await callGemini(`ROL: ${ag.instrucciones}\nPLANTILLA: ${tp.descripcion}\nESTILO: ${tp.ejemplo}\nDOCUMENTOS: ${contextDoc}\nINTERNET: ${internet}\nPETICION: ${peticion}`, aiModel);
                     setResultado(finalRes);
-
-                } catch (e) {
-                    alert("Error en la orquestación: " + e.message);
-                } finally {
-                    setLoading(false); setStatusMsg('');
-                }
+                } catch(e) { alert(e.message); } finally { setLoading(false); setStatusMsg(''); }
             };
 
-            // --- SINCRONIZACIÓN CON DRIVE (REUTILIZADA) ---
-            const uploadToCloud = async () => {
+            // --- DRIVE SYNC (IDÉNTICO A BOLSA) ---
+            const syncData = async (mode = 'upload') => {
                 const url = simpleDecrypt(gScriptUrl);
                 if (!url) return alert("Configura la URL de Google Script.");
                 setSyncStatus('syncing');
                 try {
-                    const now = Date.now();
-                    const payload = { timestamp: now, agents, templates, apiKey, aiModel, availableModels, appPin, _s_st };
-                    await fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-                    setLocalTimestamp(now); setSyncStatus('synced');
+                    if (mode === 'upload') {
+                        const payload = { timestamp: Date.now(), agents, templates, apiKey, aiModel, availableModels, appPin, _s_st };
+                        await fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                        setLocalTimestamp(Date.now()); setSyncStatus('synced');
+                    } else {
+                        const resp = await fetch(url);
+                        const d = await resp.json();
+                        if (d.timestamp > 0) {
+                            if(d.agents) setAgents(d.agents); if(d.templates) setTemplates(d.templates);
+                            if(d.apiKey) setApiKey(d.apiKey); if(d.aiModel) setAiModel(d.aiModel);
+                            if(d.appPin) setAppPin(d.appPin); if(d._s_st) _s_set(d._s_st);
+                            setLocalTimestamp(d.timestamp); setSyncStatus('synced');
+                        }
+                    }
                 } catch (e) { setSyncStatus('error'); }
             };
 
-            const downloadFromCloud = async () => {
-                const url = simpleDecrypt(gScriptUrl);
-                if (!url) return;
-                try {
-                    const resp = await fetch(url);
-                    const data = await resp.json();
-                    if (data.timestamp > 0) {
-                        if (data.agents) setAgents(data.agents);
-                        if (data.templates) setTemplates(data.templates);
-                        if (data.apiKey) setApiKey(data.apiKey);
-                        if (data.aiModel) setAiModel(data.aiModel);
-                        if (data.availableModels) setAvailableModels(data.availableModels);
-                        if (data.appPin) setAppPin(data.appPin);
-                        if (data._s_st) _s_set(data._s_st);
-                        setLocalTimestamp(data.timestamp);
-                    }
-                } catch (e) { console.error(e); }
+            const handleExport = () => {
+                const data = { agents, templates, apiKey, aiModel, availableModels, appPin, _s_st, version: 1 };
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = `BoardingGate_Agents_Backup.json`; a.click();
             };
 
-            useEffect(() => { if(gScriptUrl) downloadFromCloud(); }, []);
+            const handleImport = (e) => {
+                const file = e.target.files[0]; if(!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const d = JSON.parse(ev.target.result);
+                    if(d.agents) setAgents(d.agents); if(d.templates) setTemplates(d.templates);
+                    if(d.apiKey) setApiKey(d.apiKey); if(d.appPin) setAppPin(d.appPin);
+                    alert("Importado.");
+                };
+                reader.readAsText(file);
+            };
 
-            // --- BLOQUEO POR PIN ---
             if(isPinLocked) {
                 return (
-                    <div className="h-full flex flex-col items-center justify-center bg-[#0a0a0a] text-white p-4">
-                        <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center">
-                            <div className="mb-6"><Icons.Brain size={40} className="mx-auto text-blue-600 mb-2"/><h2 className="text-2xl font-display font-bold">Boarding<span className="text-blue-600">Gate</span></h2><p className="text-xs text-slate-400 uppercase tracking-widest">Acceso Restringido</p></div>
-                            <input type="password" value={enteredPin} onChange={e => { const val = e.target.value.slice(0,4); setEnteredPin(val); if(val === appPin) setIsPinLocked(false); }} placeholder="PIN" className="w-full bg-black/50 border border-slate-700 rounded-xl p-4 text-center text-3xl font-mono tracking-[1em] text-white focus:border-blue-500 focus:outline-none mb-4" autoFocus />
+                    <div className="h-full flex flex-col items-center justify-center bg-[#0a0a0a] text-white">
+                        <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl text-center">
+                            <Icons.Brain size={40} className="mx-auto text-blue-600 mb-4"/>
+                            <h2 className="text-xl font-bold mb-4 uppercase tracking-widest">BoardingGate</h2>
+                            <input type="password" value={enteredPin} onChange={e => { const v = e.target.value.slice(0,4); setEnteredPin(v); if(v === appPin) setIsPinLocked(false); }} placeholder="PIN" className="w-full bg-black/50 p-4 text-center text-3xl font-mono tracking-[1em]" autoFocus />
                         </div>
                     </div>
                 );
@@ -295,68 +230,48 @@
 
             return (
                 <div id="root">
-                    {/* Header Reutilizado */}
                     <header className="shrink-0 bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between items-center z-50">
-                        <div>
-                            <h1 className="text-2xl font-bold font-['Orbitron']">Boarding<span className="text-blue-600">Gate</span></h1>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Multi Agente iA & Orquestador</p>
-                        </div>
+                        <div><h1 className="text-2xl font-bold font-['Orbitron']">Boarding<span className="text-blue-500">Gate</span></h1><p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Multi Agente iA</p></div>
                         <nav className="flex bg-slate-800 rounded-lg p-1 gap-1 border border-slate-700">
-                            <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase flex items-center gap-2 transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}><Icons.Brain/> Dashboard</button>
-                            <button onClick={() => setActiveTab('agentes')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase flex items-center gap-2 transition-all ${activeTab === 'agentes' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}><Icons.User/> Agentes</button>
-                            <button onClick={() => setActiveTab('plantillas')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase flex items-center gap-2 transition-all ${activeTab === 'plantillas' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}><Icons.File/> Plantillas</button>
-                            <button onClick={() => setActiveTab('settings')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase flex items-center gap-2 transition-all ${activeTab === 'settings' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}><Icons.Settings/> Ajustes</button>
+                            <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase flex items-center gap-2 ${activeTab === 'dashboard' ? 'bg-blue-600' : 'text-slate-400'}`}><Icons.Brain/> Dashboard</button>
+                            <button onClick={() => setActiveTab('agentes')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase flex items-center gap-2 ${activeTab === 'agentes' ? 'bg-blue-600' : 'text-slate-400'}`}><Icons.User/> Agentes</button>
+                            <button onClick={() => setActiveTab('plantillas')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase flex items-center gap-2 ${activeTab === 'plantillas' ? 'bg-blue-600' : 'text-slate-400'}`}><Icons.File/></button>
+                            <button onClick={() => setActiveTab('settings')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase flex items-center gap-2 ${activeTab === 'settings' ? 'bg-blue-600' : 'text-slate-400'}`}><Icons.Settings/></button>
                         </nav>
                     </header>
 
                     <main className="flex-1 overflow-y-auto custom-scrollbar p-6">
-                        
                         {loading && (
-                            <div className="absolute inset-0 z-[200] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center fade-in">
-                                <div className="text-blue-500 mb-4"><Icons.Loader size={60}/></div>
+                            <div className="fixed inset-0 z-[200] bg-black/80 flex flex-col items-center justify-center">
+                                <Icons.Loader size={50} className="text-blue-500 mb-4"/>
                                 <div className="text-xl font-bold text-white mb-2">{statusMsg}</div>
-                                <div className="text-xs text-slate-400 animate-pulse uppercase tracking-[0.2em]">Consultando Red Neuronal</div>
                             </div>
                         )}
 
                         {activeTab === 'dashboard' && (
                             <div className="max-w-4xl mx-auto space-y-6 fade-in">
-                                <div className="glass-panel p-8 rounded-3xl space-y-4">
+                                <div className="glass-panel p-6 rounded-3xl space-y-4">
                                     <div className="flex justify-between items-center">
-                                        <h3 className="text-xs font-black uppercase text-blue-400 tracking-widest">Nueva Petición al Sistema</h3>
-                                        <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="text-[10px] font-bold py-1">
+                                        <span className="text-[10px] font-black uppercase text-blue-400 tracking-widest">Nueva Petición</span>
+                                        <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="text-[10px] font-bold">
                                             {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
                                         </select>
                                     </div>
-                                    <textarea value={peticion} onChange={e => setPeticion(e.target.value)} placeholder="Ejemplo: Revisa estas tres facturas y hazme un informe comparativo detallado siguiendo el formato de mi plantilla de auditoría..." className="w-full h-40 bg-slate-950/50 border border-slate-700 rounded-2xl p-5 text-sm focus:border-blue-500 outline-none transition-all shadow-inner" />
+                                    <textarea value={peticion} onChange={e => setPeticion(e.target.value)} placeholder="¿Qué necesitas procesar hoy?" className="w-full h-40 bg-slate-950 border border-slate-700 rounded-2xl p-5" />
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <label className="flex flex-col items-center justify-center bg-slate-800/40 border-2 border-dashed border-slate-600 rounded-2xl p-6 hover:border-blue-500 transition-all cursor-pointer group">
+                                        <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-700 rounded-2xl p-6 cursor-pointer">
                                             <input type="file" multiple onChange={e => setArchivos([...archivos, ...Array.from(e.target.files)])} className="hidden" />
-                                            <Icons.Upload className="text-slate-500 mb-2 group-hover:scale-110 transition-transform" size={32}/>
-                                            <span className="text-[10px] font-black uppercase text-slate-400">Adjuntar PDF, Word o Excel</span>
+                                            <Icons.Upload size={30} className="text-slate-500 mb-2"/>
+                                            <span className="text-[10px] uppercase font-bold text-slate-400">Adjuntar Documentación</span>
                                         </label>
-                                        <button onClick={procesarOrquestador} className="bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-xl shadow-blue-900/20 active:scale-95 transition-all">Ejecutar Misión</button>
+                                        <button onClick={procesar} className="bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest">Ejecutar</button>
                                     </div>
-                                    {archivos.length > 0 && (
-                                        <div className="flex flex-wrap gap-2 mt-4">
-                                            {archivos.map((f, i) => (
-                                                <div key={i} className="bg-blue-600/20 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-2">
-                                                    {f.name} <button onClick={() => setArchivos(archivos.filter((_,idx) => idx !== i))}>✕</button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                    <div className="flex flex-wrap gap-2">{archivos.map((f, i) => <div key={i} className="bg-blue-900/40 border border-blue-500/30 px-3 py-1 rounded-full text-[10px] font-bold">{f.name}</div>)}</div>
                                 </div>
-
                                 {resultado && (
-                                    <div className="glass-panel p-8 rounded-3xl border-l-4 border-l-blue-500 fade-in">
-                                        <div className="flex justify-between items-center mb-6">
-                                            <h4 className="text-blue-400 font-black text-xs uppercase tracking-widest">Resultado Orquestado</h4>
-                                            <button onClick={() => navigator.clipboard.writeText(resultado)} className="text-[10px] font-bold bg-slate-800 px-4 py-2 rounded-xl hover:bg-slate-700">COPIAR TEXTO</button>
-                                        </div>
-                                        <div className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap font-sans">
-                                            {resultado}
-                                        </div>
+                                    <div className="glass-panel p-8 rounded-3xl border-l-4 border-l-blue-500 whitespace-pre-wrap text-sm leading-relaxed">
+                                        <div className="flex justify-between mb-4"><span className="text-blue-400 font-bold uppercase text-xs">Resultado:</span><button onClick={()=>navigator.clipboard.writeText(resultado)} className="text-[10px] bg-slate-800 px-3 py-1 rounded">Copiar</button></div>
+                                        {resultado}
                                     </div>
                                 )}
                             </div>
@@ -364,57 +279,41 @@
 
                         {activeTab === 'agentes' && (
                             <div className="max-w-5xl mx-auto space-y-6 fade-in">
-                                <div className="flex justify-between items-center">
-                                    <h2 className="text-xl font-bold">Gestión de Agentes Expertos</h2>
-                                    <button onClick={() => setAgents([...agents, {id: Date.now(), nombre: 'Nuevo Agente', instrucciones: ''}])} className="bg-blue-600 px-6 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg"><Icons.Plus/> Crear Agente</button>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {agents.map((ag, i) => (
-                                        <div key={ag.id} className="glass-panel p-6 rounded-2xl space-y-4">
-                                            <input value={ag.nombre} onChange={e => { const n = [...agents]; n[i].nombre = e.target.value; setAgents(n); }} className="w-full text-blue-400 font-black uppercase text-sm border-none bg-black/30" />
-                                            <textarea value={ag.instrucciones} onChange={e => { const n = [...agents]; n[i].instrucciones = e.target.value; setAgents(n); }} placeholder="Instrucciones del rol..." className="w-full h-40 text-xs leading-relaxed" />
-                                            <button onClick={() => setAgents(agents.filter(x => x.id !== ag.id))} className="text-red-500 text-[10px] font-black uppercase flex items-center gap-2"><Icons.Trash/> Eliminar</button>
-                                        </div>
-                                    ))}
-                                </div>
+                                <div className="flex justify-between"><h2 className="text-xl font-bold">Agentes</h2><button onClick={()=>setAgents([...agents, {id:Date.now(), nombre:'Nuevo', instrucciones:''}])} className="bg-blue-600 px-4 py-2 rounded-xl text-xs font-bold">+ Nuevo</button></div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{agents.map((ag, i) => (
+                                    <div key={ag.id} className="glass-panel p-6 rounded-2xl space-y-4">
+                                        <input value={ag.nombre} onChange={e => { const n = [...agents]; n[i].nombre = e.target.value; setAgents(n); }} className="w-full text-blue-400 font-bold" />
+                                        <textarea value={ag.instrucciones} onChange={e => { const n = [...agents]; n[i].instrucciones = e.target.value; setAgents(n); }} className="w-full h-32 text-xs" />
+                                        <button onClick={()=>setAgents(agents.filter(x=>x.id!==ag.id))} className="text-red-500 text-[10px] uppercase font-bold flex items-center gap-1"><Icons.Trash/> Eliminar</button>
+                                    </div>
+                                ))}</div>
                             </div>
                         )}
 
                         {activeTab === 'plantillas' && (
                             <div className="max-w-5xl mx-auto space-y-6 fade-in">
-                                <div className="flex justify-between items-center">
-                                    <h2 className="text-xl font-bold">Biblioteca de Modelos de Salida</h2>
-                                    <button onClick={() => setTemplates([...templates, {id: Date.now(), nombre: 'Nuevo Modelo', descripcion: '', ejemplo: ''}])} className="bg-purple-600 px-6 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg"><Icons.Plus/> Crear Modelo</button>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {templates.map((t, i) => (
-                                        <div key={t.id} className="glass-panel p-6 rounded-2xl space-y-4">
-                                            <input value={t.nombre} onChange={e => { const n = [...templates]; n[i].nombre = e.target.value; setTemplates(n); }} className="w-full text-purple-400 font-black uppercase text-sm border-none bg-black/30" />
-                                            <textarea value={t.descripcion} onChange={e => { const n = [...templates]; n[i].descripcion = e.target.value; setTemplates(n); }} placeholder="Define el formato esperado..." className="w-full h-24 text-xs" />
-                                            <div className="bg-black/30 p-3 rounded-xl border border-slate-700">
-                                                <label className="text-[9px] font-black text-slate-500 uppercase block mb-2">Entrenar con ejemplo (.pdf, .docx, .xlsx)</label>
-                                                <input type="file" onChange={async e => {
-                                                    const text = await extractText(e.target.files[0]);
-                                                    const n = [...templates]; n[i].ejemplo = text.substring(0, 8000); setTemplates(n);
-                                                    alert("Estilo aprendido del documento.");
-                                                }} className="text-[10px] w-full" />
-                                            </div>
-                                            <button onClick={() => setTemplates(templates.filter(x => x.id !== t.id))} className="text-red-500 text-[10px] font-black uppercase flex items-center gap-2"><Icons.Trash/> Eliminar</button>
-                                        </div>
-                                    ))}
-                                </div>
+                                <div className="flex justify-between"><h2 className="text-xl font-bold">Plantillas</h2><button onClick={()=>setTemplates([...templates, {id:Date.now(), nombre:'Nueva', descripcion:'', ejemplo:''}])} className="bg-purple-600 px-4 py-2 rounded-xl text-xs font-bold">+ Nueva</button></div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{templates.map((t, i) => (
+                                    <div key={t.id} className="glass-panel p-6 rounded-2xl space-y-4">
+                                        <input value={t.nombre} onChange={e => { const n = [...templates]; n[i].nombre = e.target.value; setTemplates(n); }} className="w-full text-purple-400 font-bold" />
+                                        <textarea value={t.descripcion} onChange={e => { const n = [...templates]; n[i].descripcion = e.target.value; setTemplates(n); }} className="w-full h-24 text-xs" />
+                                        <div className="p-3 bg-black/30 rounded-xl"><label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Entrenar estilo con archivo</label>
+                                        <input type="file" onChange={async e => { const text = await extractText(e.target.files[0]); const n = [...templates]; n[i].ejemplo = text.substring(0,8000); setTemplates(n); alert("Aprendido."); }} className="text-[10px] w-full" /></div>
+                                        <button onClick={()=>setTemplates(templates.filter(x=>x.id!==t.id))} className="text-red-500 text-[10px] uppercase font-bold"><Icons.Trash/> Eliminar</button>
+                                    </div>
+                                ))}</div>
                             </div>
                         )}
 
                         {activeTab === 'settings' && (
                             <div className="max-w-2xl mx-auto space-y-8 fade-in pb-10">
-                                {/* REUTILIZADO: CONFIGURACIÓN IA */}
+                                {/* CONFIG IA (BOLSA STYLE) */}
                                 <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-8 shadow-2xl">
                                     <div className="flex items-center gap-4 mb-6 border-b border-slate-700 pb-4"><div className="p-3 bg-purple-500/20 rounded-xl text-purple-400"><Icons.Brain size={32} /></div><div><h2 className="text-2xl font-bold text-white">Configuración IA</h2><p className="text-slate-400 text-sm">Conexión con Google Gemini</p></div></div>
+                                    <label className="block text-sm font-bold text-slate-300 mb-2">Google Gemini API Key</label>
+                                    <div className="relative mb-4"><input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="AIzaSy..." className="w-full bg-black/50 border border-slate-600 rounded-xl p-4 font-mono"/><button className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500"><Icons.Eye/></button></div>
+                                    <div className="flex justify-end mb-6"><button onClick={testConnection} className={`px-6 py-2 rounded-xl border font-bold text-xs flex items-center gap-2 ${testStatus==='success'?'bg-green-600':'bg-slate-700'}`}>{testStatus==='loading'?<Icons.Loader/>:'PROBAR CONEXIÓN'}</button></div>
                                     
-                                    <label className="block text-sm font-bold text-slate-300 mb-2">Gemini API Key</label>
-                                    <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="AIzaSy..." className="w-full bg-black/50 border border-slate-600 rounded-xl p-4 font-mono mb-6" />
-
                                     <label className="block text-sm font-bold text-slate-300 mb-2 uppercase">Modelo IA Activo</label>
                                     <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 mb-6">
                                         {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
@@ -423,73 +322,92 @@
                                     <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 mb-6">
                                         <label className="block text-[10px] font-bold text-slate-500 mb-2 uppercase">Añadir Nuevo ID de Modelo</label>
                                         <div className="flex gap-2">
-                                            <input type="text" id="newModelInput" placeholder="Ej: gemini-2.0-flash" className="flex-1 text-xs" />
-                                            <button onClick={() => { const inp = document.getElementById('newModelInput'); if(inp.value) { setAvailableModels([...availableModels, inp.value]); setAiModel(inp.value); inp.value=''; } }} className="bg-blue-600 px-4 rounded-lg text-xs font-bold uppercase">Añadir</button>
+                                            <input type="text" id="newMod" placeholder="Ej: gemini-2.5-pro" className="flex-1 text-xs" />
+                                            <button onClick={()=>{const i=document.getElementById('newMod'); if(i.value){setAvailableModels([...availableModels, i.value]); setAiModel(i.value); i.value='';}}} className="bg-blue-600 px-4 py-2 rounded-lg text-xs font-bold uppercase">Añadir</button>
                                         </div>
                                     </div>
 
-                                    {/* REUTILIZADO: TUTORIAL API */}
-                                    <div className="p-6 bg-[#1e293b] border border-[#334155] rounded-xl">
-                                        <h4 className="text-lg font-bold text-blue-400 mb-4">Manual de API Key</h4>
-                                        <div className="space-y-4 text-xs text-slate-300 leading-relaxed">
-                                            <p>1. Ve a <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-blue-400 font-bold underline">Google AI Studio</a>.</p>
-                                            <p>2. Crea tu API Key (Gratis 15 req/min).</p>
-                                            <p>3. Para modo ilimitado, asocia facturación en Cloud Console (pago por uso ínfimo).</p>
-                                        </div>
+                                    {/* TUTORIAL API (BOLSA STYLE) */}
+                                    <div className="p-6 bg-[#1e293b] border border-[#334155] rounded-xl"><h4 className="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2"><Icons.Brain size={20} /> Gestión de la API Key</h4>
+                                        <div className="mb-6 border-b border-slate-700 pb-6"><h5 className="text-sm font-bold text-white mb-3">Opción Gratuita</h5><ol className="list-decimal list-inside text-xs text-slate-300 space-y-2 mb-4"><li>Accede a <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-blue-400 font-bold underline">Google AI Studio</a>.</li><li>Pulsa en <strong>"Get API key"</strong> y luego en <strong>"Create API Key"</strong>.</li><li>Copia la clave y pégala arriba.</li></ol></div>
+                                        <h5 className="text-sm font-bold text-white mb-3">Opción de Pago (Ilimitada)</h5><p className="text-xs text-slate-300 mb-3">Para evitar bloqueos, asocia una tarjeta en la misma web de AI Studio pulsando en el menú de "Billing". El coste es por uso y es ínfimo (céntimos al mes).</p>
                                     </div>
                                 </div>
 
-                                {/* REUTILIZADO: GDRIVE Y CLOUD */}
+                                {/* SYNC CLOUD (BOLSA STYLE) */}
                                 <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-8 shadow-2xl">
-                                    <h4 className="text-sm font-bold text-blue-400 mb-4 uppercase tracking-widest flex items-center gap-2"><Icons.Refresh size={16}/>Sincronización Cloud</h4>
-                                    <input type="password" value={simpleDecrypt(gScriptUrl)} onChange={e => setGScriptUrl(simpleEncrypt(e.target.value))} placeholder="https://script.google.com/macros/s/..." className="w-full bg-black/50 border border-slate-600 rounded-xl p-3 font-mono text-xs mb-4" />
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <button onClick={uploadToCloud} className="bg-blue-600 py-3 rounded-xl font-bold uppercase text-[10px]">Guardar en Drive</button>
-                                        <button onClick={downloadFromCloud} className="bg-slate-700 py-3 rounded-xl font-bold uppercase text-[10px]">Cargar de Drive</button>
-                                    </div>
+                                    <h4 className="text-sm font-bold text-blue-400 mb-4 uppercase tracking-widest flex items-center gap-2"><Icons.Globe size={16}/>Copia Automática en GDRIVE</h4>
+                                    <div className="flex items-end gap-2 mb-4"><input type="password" value={simpleDecrypt(gScriptUrl)} onChange={e=>setGScriptUrl(simpleEncrypt(e.target.value))} placeholder="https://script.google.com/..." className="w-full bg-black/50 border border-slate-600 rounded-xl p-3 font-mono text-xs"/><button onClick={uploadToCloud} className="bg-blue-600 p-3 rounded-xl"><Icons.Refresh/></button></div>
+                                    
+                                    <div className="bg-slate-950/50 border border-slate-700 rounded-xl p-4">
+                                        <h5 className="text-xs font-bold text-white mb-3">Guía de Configuración (Script de Google)</h5>
+                                        <ol className="list-decimal list-inside text-[11px] text-slate-300 space-y-2">
+                                            <li>Ve a <a href="https://script.google.com/home" target="_blank" className="text-blue-400 font-bold">Google Apps Script</a> y pulsa en <strong>"Nuevo Proyecto"</strong>.</li>
+                                            <li>Borra el código y pega este bloque exacto:
+                                                <pre className="bg-black text-green-500 p-2 rounded mt-2 border border-slate-800 overflow-x-auto text-[10px] font-mono select-all">
+{`function A_AUTORIZAR_AQUI() {
+  DriveApp.getFiles(); 
+  UrlFetchApp.fetch("https://www.google.com");
+}
 
-                                    <div className="bg-slate-950/50 border border-slate-700 rounded-xl p-4 mt-6">
-                                        <h5 className="text-xs font-bold text-white mb-3">Tutorial Sincronización</h5>
-                                        <p className="text-[11px] text-slate-400">Pega el código en Google Apps Script, implementa como Aplicación Web y autoriza el acceso a Drive.</p>
-                                        <pre className="bg-black text-green-500 p-2 text-[8px] mt-2 overflow-x-auto">
-{`function doPost(e) {
-  var data = JSON.parse(e.postData.contents);
-  var file = DriveApp.getFilesByName("BG_AGENTS_DB.json").next();
-  file.setContent(JSON.stringify(data));
-  return ContentService.createTextOutput("OK");
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var files = DriveApp.getFilesByName("BOARDINGGATE_AGENTS_DB.json");
+    var file = files.hasNext() ? files.next() : DriveApp.createFile("BOARDINGGATE_AGENTS_DB.json", "{}", MimeType.PLAIN_TEXT);
+    file.setContent(JSON.stringify(data));
+    return ContentService.createTextOutput("OK");
+  } catch(err) { return ContentService.createTextOutput(err.toString()); } 
+  finally { lock.releaseLock(); }
+}
+
+function doGet(e) {
+  var files = DriveApp.getFilesByName("BOARDINGGATE_AGENTS_DB.json");
+  if (files.hasNext()) return ContentService.createTextOutput(files.next().getBlob().getDataAsString()).setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify({timestamp:0})).setMimeType(ContentService.MimeType.JSON);
 }`}
-                                        </pre>
+                                                </pre>
+                                            </li>
+                                            <li className="text-blue-400 font-bold">Selecciona "doPost" y pulsa ▶ Ejecutar para autorizar a Drive.</li>
+                                            <li>Pulsa en <strong>"Implementar"</strong> &rarr; <strong>"Nueva implementación"</strong> &rarr; <strong>"Aplicación web"</strong>.</li>
+                                            <li>En "Quién tiene acceso", elige <strong>"Cualquier usuario"</strong>.</li>
+                                        </ol>
                                     </div>
                                 </div>
 
-                                {/* REUTILIZADO: SEGURIDAD PIN */}
-                                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-8 shadow-2xl">
-                                    <h2 className="text-xl font-bold mb-4 flex items-center gap-3 text-red-400"><Icons.Eye size={32} /> Seguridad de Acceso</h2>
-                                    <input type="password" value={appPin} onChange={e => setAppPin(e.target.value.replace(/\D/g,'').slice(0,4))} placeholder="PIN 4 dígitos" className="w-full bg-slate-800 border border-slate-600 rounded-xl p-4 text-center text-2xl tracking-[1em]" />
-                                    <p className="text-[10px] text-slate-500 mt-2 italic text-center">Deja vacío para desactivar el bloqueo al inicio.</p>
+                                {/* BACKUP Y SEGURIDAD */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                                        <h3 className="text-sm font-bold mb-4 text-red-400">Seguridad PIN</h3>
+                                        <input type="password" value={appPin} onChange={e=>setAppPin(e.target.value.replace(/\D/g,'').slice(0,4))} placeholder="PIN 4 dígitos" className="w-full bg-black/50 text-center text-2xl tracking-[1em]" />
+                                    </div>
+                                    <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col gap-2">
+                                        <h3 className="text-sm font-bold mb-2">Copia Local</h3>
+                                        <button onClick={handleExport} className="w-full bg-slate-800 py-2 rounded text-[10px] font-bold">EXPORTAR JSON</button>
+                                        <label className="w-full bg-blue-600 py-2 rounded text-[10px] font-bold text-center cursor-pointer">IMPORTAR JSON<input type="file" className="hidden" onChange={handleImport} /></label>
+                                    </div>
                                 </div>
 
-                                {/* REUTILIZADO: ESTADO DEL SISTEMA / HASH */}
-                                <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-8 shadow-2xl">
-                                    <h2 className="text-2xl font-bold text-white border-b border-slate-700 pb-4 mb-6">Estado del Sistema</h2>
-                                    <div className="bg-black/30 p-5 rounded-xl border border-slate-700">
-                                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Hash de Instalación</label>
-                                        <div className="flex gap-3">
-                                            <input type="text" id="licInput" placeholder="XXXX-XXXX" className="flex-1 bg-slate-900 border border-slate-600 rounded-lg p-3 text-white font-mono" />
-                                            <button onClick={() => { const v = document.getElementById('licInput').value; if(_0x8f(v)) { _s_set(_0xT); alert("Validado."); } else { alert("Error."); } }} className="px-6 py-2 bg-blue-600 rounded-lg font-bold text-xs uppercase">Verificar</button>
-                                        </div>
-                                        {_0xAuth && <div className="mt-3 text-center text-green-400 text-xs font-bold uppercase tracking-widest">● SISTEMA ACTIVADO</div>}
+                                {/* ESTADO HASH */}
+                                <div className="bg-slate-900 p-8 rounded-2xl border-l-4 border-l-green-500 shadow-2xl">
+                                    <h2 className="text-xl font-bold mb-4">Hash de Instalación</h2>
+                                    <div className="flex gap-2">
+                                        <input type="text" id="licInput" placeholder="XXXX-XXXX" className="flex-1 bg-black p-3 font-mono" />
+                                        <button onClick={()=>{const v=document.getElementById('licInput').value; if(_0x8f(v)){_s_set(_0xT); alert("OK");}else{alert("ERR");}}} className="bg-blue-600 px-6 font-bold text-xs uppercase">Validar</button>
                                     </div>
+                                    {_0xAuth && <div className="mt-4 text-green-400 text-xs font-black tracking-[0.2em] animate-pulse">● SISTEMA ACTIVADO</div>}
                                 </div>
                             </div>
                         )}
                     </main>
 
-                    <footer className="shrink-0 bg-slate-900 border-t border-slate-800 py-1 px-6 flex justify-between items-center text-[8px] text-slate-600 font-bold uppercase tracking-widest">
-                        <div>BoardingGate Agent 1.0 (SECURE)</div>
+                    <footer className="shrink-0 bg-slate-900 border-t border-slate-800 py-1 px-6 flex justify-between items-center text-[8px] text-slate-600 font-bold uppercase">
+                        <div>BoardingGate Agents v1.1 (Secure)</div>
                         <div className="flex gap-4">
-                            <span>Sinc: {syncStatus === 'synced' ? 'Nube OK' : 'Local'}</span>
-                            <span>Licencia: {_0xAuth ? 'ACTIVA' : 'RESTRINGIDA'}</span>
+                            <span>Sinc Nube: {syncStatus==='synced'?'OK':'NO CONFIG'}</span>
+                            <span>Licencia: {_0xAuth?'ACTIVA':'RESTRINGIDA'}</span>
                         </div>
                     </footer>
                 </div>
