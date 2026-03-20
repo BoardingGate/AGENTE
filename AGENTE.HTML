@@ -205,10 +205,9 @@
                     for(const f of archivos) contextDoc += `\n- ARCHIVO ADJUNTO: ${f.name}\n${await extractTextFromFile(f)}\n`;
                     
                     const planningPrompt = `HOY ES: ${hoy}. PETICIÓN: "${peticion}". 
-                    Agentes disponibles: ${JSON.stringify(agents.map(a=>a.nombre))}. 
-                    Plantillas disponibles: ${JSON.stringify(templates.map(t=>t.nombre))}. 
-                    Analiza la misión y decide qué especialistas (máximo 5) deben colaborar para un resultado óptimo.
-                    RESPONDE SOLO CON ESTE JSON: {"valid":boolean, "error_msg":"string", "selected_agents":["nombre1", "nombre2"], "plantilla":"nombre", "internet":boolean, "query":"string"}`;
+                    Agentes: ${JSON.stringify(agents.map(a=>a.nombre))}. Formatos: ${JSON.stringify(templates.map(t=>t.nombre))}. 
+                    Decide qué especialistas (máximo 5) deben colaborar para un resultado experto. 
+                    JSON: {"valid":boolean, "error_msg":"string", "selected_agents":["nombre1", "nombre2"], "plantilla":"nombre", "internet":boolean, "query":"string"}`;
                     
                     const planningRes = await callGemini(planningPrompt, aiModel);
                     const decision = JSON.parse(planningRes.match(/\{[\s\S]*\}/)[0]);
@@ -218,43 +217,36 @@
                         setLoading(false); return;
                     }
 
-                    let internetData = "";
+                    let internet = "";
                     if(decision.internet) {
                         setStatusMsg(`Mejora Activa: Consultando red global (${hoy})...`);
-                        internetData = await callGemini(`DATOS REALES Y ACTUALIZADOS A FECHA ${hoy} SOBRE: ${decision.query}`, aiModel, true);
+                        internet = await callGemini(`DATOS REALES Y ACTUALIZADOS A FECHA ${hoy} SOBRE: ${decision.query}`, aiModel, true);
                     }
 
-                    // --- EJECUCIÓN ENJAMBRE (SWARM) ---
                     let swarmContributions = "";
                     for (const agName of decision.selected_agents.slice(0, 5)) {
                         const ag = agents.find(a => a.nombre === agName) || agents[0];
-                        setStatusMsg(`Agente [${ag.nombre}] analizando...`);
-                        const agentPrompt = `
-                            CONOCIMIENTO ACTUAL RED: ${internetData}
-                            DOCUMENTOS EXTRA: ${contextDoc}
-                            PETICION: ${peticion}
-                            TU ROL: ${ag.instrucciones}
-                            Tarea: Basándote en tu rol, proporciona una aportación técnica y experta para resolver la misión. 
-                            Respuesta directa, técnica y sin introducciones.`;
+                        setStatusMsg(`Agente [${ag.nombre}] trabajando...`);
+                        const agentPrompt = `CONTEXTO: ${internet}. DOCUMENTOS: ${contextDoc}. PETICION: ${peticion}. ROL: ${ag.instrucciones}. 
+                        Tarea: Proporciona tu análisis experto técnico para la misión desde tu especialidad. Responde directo y sin saludos.`;
                         const contribution = await callGemini(agentPrompt, aiModel);
-                        swarmContributions += `\n--- APORTACIÓN DE ${ag.nombre} ---\n${contribution}\n`;
+                        swarmContributions += `\n--- ANALISIS DE ${ag.nombre} ---\n${contribution}\n`;
                     }
 
                     const tp = templates.find(t=>t.nombre===decision.plantilla) || templates[0];
                     setInfoOrquestador({ agentes: decision.selected_agents.join(", "), plantilla: tp.nombre, internet: decision.internet ? 'Sí' : 'No' });
 
-                    setStatusMsg("Consolidando Enjambre...");
+                    setStatusMsg("Ensamblando informe final...");
                     const finalPrompt = `
                     FECHA ACTUAL: ${hoy}.
-                    FORMATO REQUERIDO: ${tp.descripcion}.
-                    EJEMPLO ESTRUCTURA: ${tp.ejemplo || ''}
-                    APORTACIONES DE ESPECIALISTAS: ${swarmContributions}. 
-                    PETICION ORIGINAL: ${peticion}.
+                    APORTACIONES ESPECIALISTAS: ${swarmContributions}.
+                    FORMATO FINAL: ${tp.descripcion}. 
+                    EJEMPLO: ${tp.ejemplo || ''}
+                    PETICION ORIGINAL: ${peticion}. 
                     
-                    INSTRUCCIONES FINALES: Unifica todas las aportaciones de los especialistas en un informe coherente siguiendo el formato indicado.
-                    REGLA 1: PRIORIZA LOS DATOS TÉCNICOS APORTADOS POR EL ENJAMBRE.
+                    REGLA: UNIFICA TODO EN UN INFORME COHERENTE SEGÚN EL FORMATO.
                     REGLA 2: COMIENZA DIRECTAMENTE EL INFORME. PROHIBIDAS INTRODUCCIONES.
-                    REGLA 3: SALIDA HTML SEMÁNTICO COMPLETO.`;
+                    REGLA 3: SALIDA HTML SEMÁNTICO.`;
                     
                     const res = await callGemini(finalPrompt, aiModel);
                     setResultado(res.replace(/```html/g, '').replace(/```/g, '').trim());
@@ -401,7 +393,7 @@
                                     <div className="glass-panel p-10 rounded-3xl border-l-4 border-l-blue-500 fade-in shadow-2xl relative bg-slate-900">
                                         <div className="flex flex-wrap justify-between items-center border-b border-slate-700 pb-4 mb-6 gap-2">
                                             <div className="text-[9px] font-bold text-slate-500 uppercase">Enjambre: <span className="text-purple-400">{infoOrquestador?.agentes}</span> | Red: <span className="text-blue-400">{infoOrquestador?.internet}</span></div>
-                                                <div className="flex flex-wrap gap-2">
+                                            <div className="flex flex-wrap gap-2">
                                                     <button onClick={()=>navigator.clipboard.writeText(resultado.replace(/<[^>]*>/g,''))} className="text-[8px] font-black bg-slate-800 hover:bg-slate-700 px-2 py-1.5 rounded border border-slate-700 uppercase">Copia</button>
                                                     <button onClick={exportPDF} className="text-[8px] font-black bg-red-900/30 hover:bg-red-900/50 text-red-400 px-2 py-1.5 rounded border border-red-500/30 uppercase">PDF</button>
                                                     <button onClick={exportExcel} className="text-[8px] font-black bg-green-900/30 hover:bg-green-900/50 text-green-400 px-2 py-1.5 rounded border border-green-500/30 uppercase">Excel</button>
@@ -465,6 +457,7 @@
 
                         {activeTab === 'settings' && (
                             <div className="max-w-2xl mx-auto space-y-8 fade-in pb-10">
+                                {/* CONFIG IA EXACTO BOLSA */}
                                 <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl">
                                     <div className="flex items-center gap-4 mb-6 border-b border-slate-700 pb-4"><div className="p-3 bg-purple-500/20 rounded-xl text-purple-400 flex items-center justify-center"><Icons.Brain/></div><div><h2 className="text-2xl font-bold text-white uppercase tracking-widest">IA Protocol</h2></div></div>
                                     <label className="block text-sm font-bold text-slate-300 mb-2">API Key de Gemini</label>
@@ -477,6 +470,7 @@
                                     <div className="mt-8 p-6 bg-[#1e293b] border border-[#334155] rounded-2xl"><h4 className="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2"><Icons.AlertCircle/> Manual API</h4><div className="mb-6 border-b border-slate-700 pb-6"><h5 className="text-sm font-bold text-white mb-3">Opción Gratuita</h5><ol className="list-decimal list-inside text-xs text-slate-300 space-y-2 mb-4 leading-relaxed"><li>Accede a <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-blue-400 font-bold underline">Google AI Studio</a>.</li><li>Pulsa en <strong>"Get API key"</strong> y luego en <strong>"Create API Key"</strong>.</li><li>Copia la clave y pégala arriba.</li></ol></div><h5 className="text-sm font-bold text-white mb-3">Opción de Pago</h5><p className="text-xs text-slate-300">Asocia tarjeta en "Billing" de AI Studio. El coste es ínfimo y sin límites.</p></div>
                                 </div>
 
+                                {/* SYNC GDRIVE EXACTO BOLSA */}
                                 <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl">
                                     <div className="flex items-center gap-4 mb-6 border-b border-slate-700 pb-4"><div className="p-3 bg-blue-500/20 rounded-xl text-blue-400 flex justify-center items-center"><Icons.Globe/></div><div><h2 className="text-2xl font-bold text-white uppercase tracking-widest">Sincronización Cloud</h2><p className="text-slate-400 text-sm">Persistencia en Drive</p></div></div>
                                     <div className="flex items-end gap-2 mb-6">
@@ -490,13 +484,54 @@
                                     <div className="bg-slate-950/80 border border-slate-700 rounded-2xl p-6">
                                         <h5 className="text-xs font-bold text-white mb-4 flex items-center gap-2"><Icons.Settings/> Tutorial de Configuración</h5>
                                         <ol className="list-decimal list-inside text-[11px] text-slate-300 space-y-4 leading-relaxed">
-                                            <li>Ve a Google Apps Script y haz clic en "Nuevo Proyecto". Pega el código que ya tienes configurado en tu Script de Google.</li>
+                                            <li>Ve a <a href="https://script.google.com/home" target="_blank" className="text-blue-400 font-bold underline">Google Apps Script</a> y haz clic en <strong>"Nuevo Proyecto"</strong>.</li>
+                                            <li>Pega este código exacto:
+<pre className="bg-black text-green-400 p-4 rounded-xl mt-3 border border-slate-800 overflow-x-auto text-[10px] font-mono leading-relaxed select-all shadow-inner">
+{`function A_AUTORIZAR_AQUI() { DriveApp.getFiles(); UrlFetchApp.fetch("https://www.google.com"); }
+
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var fileName = "BG_AGENTS_DB.json";
+    var files = DriveApp.getFilesByName(fileName);
+    var file = files.hasNext() ? files.next() : DriveApp.createFile(fileName, "{}", MimeType.PLAIN_TEXT);
+    
+    // Crear/Actualizar Backup antes de guardar lo nuevo
+    var backupName = fileName + ".bak";
+    var backups = DriveApp.getFilesByName(backupName);
+    var backupFile = backups.hasNext() ? backups.next() : DriveApp.createFile(backupName, "", MimeType.PLAIN_TEXT);
+    backupFile.setContent(file.getBlob().getDataAsString());
+    
+    // Guardar datos actuales
+    file.setContent(JSON.stringify(data));
+    return ContentService.createTextOutput(JSON.stringify({status:"success", ts: data.timestamp})).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({status:"error", msg: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function doGet(e) {
+  var isRestore = e.parameter.restoreBak === "true";
+  var fileName = isRestore ? "BG_AGENTS_DB.json.bak" : "BG_AGENTS_DB.json";
+  var files = DriveApp.getFilesByName(fileName);
+  if (files.hasNext()) {
+    return ContentService.createTextOutput(files.next().getBlob().getDataAsString()).setMimeType(ContentService.MimeType.JSON);
+  }
+  return ContentService.createTextOutput(JSON.stringify({timestamp:0})).setMimeType(ContentService.MimeType.JSON);
+}`}
+</pre>
+                                            </li>
                                             <li className="text-blue-400 font-bold uppercase">IMPORTANTE: Ejecuta "A_AUTORIZAR_AQUI" primero pulsando ▶ Ejecutar.</li>
-                                            <li>Pulsa Implementar > Nueva implementación > Aplicación web. Quién tiene acceso: Cualquier usuario. Copia la URL que genera y pégala aquí.</li>
+                                            <li>Pulsa <strong>Implementar > Nueva implementación > Aplicación web</strong>. Pon "Quién tiene acceso: Cualquier usuario".</li>
                                         </ol>
                                     </div>
                                 </div>
 
+                                {/* PIN Y BACKUP EXACTO BOLSA */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-xl border-t-2 border-t-red-600">
                                         <h3 className="text-xs font-black text-red-500 uppercase mb-4 tracking-widest flex items-center gap-2"><Icons.EyeOff/> Seguridad PIN</h3>
@@ -512,6 +547,7 @@
                                     </div>
                                 </div>
 
+                                {/* ESTADO SISTEMA EXACTO BOLSA */}
                                 <div className="bg-slate-900 p-10 rounded-3xl border border-slate-800 shadow-2xl border-l-4 border-l-green-500">
                                     <h2 className="text-xl font-bold mb-6 uppercase tracking-widest text-white">Entorno</h2>
                                     <div className="bg-black/40 p-6 rounded-2xl border border-slate-700">
@@ -524,6 +560,7 @@
                                     </div>
                                 </div>
 
+                                {/* PIE EXACTO BOLSA */}
                                 <div className="text-center bg-slate-800/50 p-6 rounded-2xl max-w-2xl w-full mb-10 mx-auto border border-slate-700 shadow-inner">
                                     <p className="text-xs text-slate-400 mb-4 leading-relaxed">Esta plataforma es un proyecto independiente sustentado exclusivamente mediante <strong className="text-slate-300">crowdfunding</strong> y las aportaciones directas de sus usuarios.</p>
                                     <p className="text-xs text-slate-400 mb-3 border-t border-slate-700 pt-5 font-bold uppercase tracking-widest">Colabora con el proyecto:</p>
