@@ -2,31 +2,30 @@
 <html lang="es"> 
 <head> 
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>BoardingGate - Multi Agente iA</title>
     
-    <!-- Librerías de Estilo y UI -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     
-    <!-- Core React -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Librerías de Procesamiento de Documentos -->
+    <!-- Librerías de Documentos -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        body { background-color: #0a0a0a; font-family: 'Inter', sans-serif; color: #e5e5e5; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100dvh; overflow: auto; background-color: #0a0a0a; font-family: 'Inter', sans-serif; color: #e5e5e5; }
+        #root { height: 100dvh; width: 100%; display: flex; flex-direction: column; overflow: hidden; }
         .glass-panel { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #111; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        .active-tab { background-color: #3b82f6; color: white; box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); }
-        input, select, textarea { background: #1e293b; border: 1px solid #334155; color: white; border-radius: 8px; padding: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        input, select, textarea { background: #1e293b; border: 1px solid #334155; color: white; border-radius: 6px; padding: 8px; transition: all 0.2s; }
+        input:focus, select:focus, textarea:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -38,77 +37,80 @@
         const { useState, useEffect, useMemo, useRef } = React;
         const { createRoot } = ReactDOM;
 
-        // --- CONSTANTES Y UTILIDADES ---
+        // --- LÓGICA DE LICENCIA Y SEGURIDAD REUTILIZADA ---
+        const _0x7a2=k=>{let x=Object.values(new Intl.DateTimeFormat('es').formatToParts(new Date())).filter(p=>['year','month','day'].includes(p.type)).reduce((a,c)=>a+~~c.value,0)*new Date().getDate();return k==x||k==x.toString(16).toUpperCase()};
+        const _0x8f = (k) => { try { const _d = new Date(); const _v = Object.values(new Intl.DateTimeFormat('es').formatToParts(_d)).filter(p => ['day', 'month', 'year'].includes(p.type)).reduce((a, b) => a + parseInt(b.value), 0) * _d.getDate(); return k === _v.toString(16).toUpperCase(); } catch { return false; } }; 
+        const _0xL = '__sys_reg_st'; const _0xT = 'ACTIVATED_V3_SECURE';
+
+        const simpleEncrypt = (text) => { if(!text) return ''; try { return btoa(text.split('').map((c, i) => String.fromCharCode(c.charCodeAt(0) + (i % 5))).join('')); } catch { return text; } };
+        const simpleDecrypt = (text) => { if(!text) return ''; try { return atob(text).split('').map((c, i) => String.fromCharCode(c.charCodeAt(0) - (i % 5))).join(''); } catch { return text; } };
+
+        const usePersistentState = (key, initialValue) => {
+            const [state, setState] = useState(() => { try { const item = window.localStorage.getItem(key); return item ? JSON.parse(item) : initialValue; } catch { return initialValue; } });
+            useEffect(() => { window.localStorage.setItem(key, JSON.stringify(state)); }, [key, state]); return [state, setState];
+        };
+
+        const Icons = {
+            Brain: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M13 7h-2v2h2V7zm0 4h-2v6h2v-6z"/></svg>,
+            Settings: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>,
+            User: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>,
+            Plus: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>,
+            Trash: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>,
+            Upload: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>,
+            File: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>,
+            Check: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>,
+            Alert: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>,
+            Eye: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>,
+            Refresh: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" className={p.className}><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>,
+            Loader: (p) => <svg className="animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="18" height="18"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        };
+
         const DEFAULT_AI_MODELS = [
             "gemini-2.0-flash-exp",
-            "gemini-1.5-pro-latest",
-            "gemini-1.5-flash-latest",
+            "gemini-1.5-pro",
+            "gemini-1.5-flash",
             "gemini-3.1-pro-preview",
             "gemini-3-pro-preview",
             "gemini-3-flash-preview"
         ];
 
-        const Icons = {
-            Brain: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>,
-            Settings: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>,
-            Users: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>,
-            FileText: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>,
-            Search: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>,
-            Upload: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>,
-            Trash: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
-            Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>,
-            Loader: () => <svg className="w-6 h-6 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-        };
-
-        const usePersistentState = (key, initialValue) => {
-            const [state, setState] = useState(() => {
-                try {
-                    const item = window.localStorage.getItem(key);
-                    return item ? JSON.parse(item) : initialValue;
-                } catch { return initialValue; }
-            });
-            useEffect(() => { window.localStorage.setItem(key, JSON.stringify(state)); }, [key, state]);
-            return [state, setState];
-        };
-
-        const simpleEncrypt = (text) => btoa(text);
-        const simpleDecrypt = (text) => { try { return atob(text); } catch { return ""; } };
-
-        // --- FUNCIONES DE EXTRACCIÓN DE DOCUMENTOS ---
+        // --- EXTRACCIÓN DE TEXTO MULTIFORMATO ---
         const extractText = async (file) => {
             const ext = file.name.split('.').pop().toLowerCase();
-            if (ext === 'pdf') {
-                const arrayBuffer = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                let text = "";
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const content = await page.getTextContent();
-                    text += content.items.map(item => item.str).join(' ') + "\n";
+            try {
+                if (ext === 'pdf') {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    let text = "";
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const content = await page.getTextContent();
+                        text += content.items.map(item => item.str).join(' ') + "\n";
+                    }
+                    return text;
+                } else if (ext === 'docx') {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const result = await mammoth.extractRawText({ arrayBuffer });
+                    return result.value;
+                } else if (ext === 'xlsx' || ext === 'xls') {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const workbook = XLSX.read(arrayBuffer);
+                    let text = "";
+                    workbook.SheetNames.forEach(sheet => {
+                        text += `--- Hoja: ${sheet} ---\n` + XLSX.utils.sheet_to_txt(workbook.Sheets[sheet]) + "\n";
+                    });
+                    return text;
                 }
-                return text;
-            } else if (ext === 'docx') {
-                const arrayBuffer = await file.arrayBuffer();
-                const result = await mammoth.extractRawText({ arrayBuffer });
-                return result.value;
-            } else if (ext === 'xlsx' || ext === 'xls') {
-                const arrayBuffer = await file.arrayBuffer();
-                const workbook = XLSX.read(arrayBuffer);
-                let text = "";
-                workbook.SheetNames.forEach(sheet => {
-                    text += XLSX.utils.sheet_to_txt(workbook.Sheets[sheet]) + "\n";
-                });
-                return text;
-            }
+            } catch (e) { return `Error procesando ${file.name}: ${e.message}`; }
             return "";
         };
 
-        // --- COMPONENTE: MODAL ---
-        const Modal = ({ isOpen, title, onClose, children }) => {
+        // --- COMPONENTE MODAL ---
+        const Modal = ({ isOpen, title, onClose, children, size = "md" }) => {
             if (!isOpen) return null;
             return (
-                <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-2xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden">
+                <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 fade-in" onClick={onClose}>
+                    <div className={`bg-slate-900 border border-slate-700 w-full ${size === 'lg' ? 'max-w-4xl' : 'max-w-xl'} rounded-2xl flex flex-col max-h-[90vh] shadow-2xl overflow-hidden`} onClick={e => e.stopPropagation()}>
                         <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
                             <h3 className="text-lg font-bold text-white">{title}</h3>
                             <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
@@ -119,33 +121,46 @@
             );
         };
 
-        // --- APP PRINCIPAL ---
+        // --- COMPONENTE PRINCIPAL ---
         const App = () => {
-            const [activeTab, setActiveTab] = useState('dashboard');
+            // Ajustes Globales (Mantenidos de Bolsa)
             const [apiKey, setApiKey] = usePersistentState('bg_agents_api_key', '');
-            const [gScriptUrl, setGScriptUrl] = usePersistentState('bg_agents_gscript', '');
-            const [aiModel, setAiModel] = usePersistentState('bg_agents_model', 'gemini-2.0-flash-exp');
+            const [gScriptUrl, setGScriptUrl] = usePersistentState('bg_agents_gscript_url', '');
+            const [aiModel, setAiModel] = usePersistentState('bg_agents_ai_model', DEFAULT_AI_MODELS[0]);
             const [availableModels, setAvailableModels] = usePersistentState('bg_agents_models_list', DEFAULT_AI_MODELS);
+            const [appPin, setAppPin] = usePersistentState('bg_agents_app_pin', '');
+            const [_s_st, _s_set] = usePersistentState(_0xL, '');
+            const [localTimestamp, setLocalTimestamp] = usePersistentState('bg_agents_local_ts', 0);
             
-            const [agents, setAgents] = usePersistentState('bg_agents_list', [{id: 1, nombre: 'Asistente General', instrucciones: 'Eres un asistente experto.'}]);
-            const [templates, setTemplates] = usePersistentState('bg_templates_list', [{id: 1, nombre: 'Texto Libre', descripcion: 'Formato estándar.'}]);
+            // Datos de la App (Multi-Agente)
+            const [agents, setAgents] = usePersistentState('bg_agents_data', [{id: 1, nombre: 'Asistente General', instrucciones: 'Eres un experto analista de documentos. Tu objetivo es resumir y responder con precisión.'}]);
+            const [templates, setTemplates] = usePersistentState('bg_templates_data', [{id: 1, nombre: 'Resumen Ejecutivo', descripcion: 'Estructura la salida con un resumen, puntos clave y conclusiones.', ejemplo: ''}]);
             
+            // Estado de UI
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [isPinLocked, setIsPinLocked] = useState(!!appPin);
+            const [enteredPin, setEnteredPin] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [statusMsg, setStatusMsg] = useState('');
+            const [syncStatus, setSyncStatus] = useState('idle');
+
+            // Consola de ejecución
             const [peticion, setPeticion] = useState('');
             const [archivos, setArchivos] = useState([]);
             const [resultado, setResultado] = useState('');
-            const [loading, setLoading] = useState(false);
-            const [statusMsg, setStatusMsg] = useState('');
 
-            // --- LÓGICA IA ---
-            const callGemini = async (prompt, tools = false) => {
+            const _0xAuth = useMemo(() => _s_st === _0xT, [_s_st]);
+
+            // --- LLAMADA A GEMINI ---
+            const callGemini = async (prompt, model, useSearch = false) => {
                 const body = {
                     contents: [{ parts: [{ text: prompt }] }]
                 };
-                if (tools) {
+                if (useSearch) {
                     body.tools = [{ google_search: {} }];
                 }
 
-                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${aiModel}:generateContent?key=${apiKey}`, {
+                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
@@ -155,150 +170,178 @@
                 return data.candidates[0].content.parts[0].text;
             };
 
-            const procesarPeticion = async () => {
-                if (!apiKey) return alert("Configura la API Key en Ajustes.");
-                setLoading(true);
-                setResultado('');
+            // --- ORQUESTADOR INTELIGENTE ---
+            const procesarOrquestador = async () => {
+                if (!apiKey) return alert("Introduce tu API Key en Ajustes");
+                setLoading(true); setResultado('');
                 try {
-                    // 1. Extraer texto de archivos
-                    setStatusMsg("Extrayendo contenido de documentos...");
-                    let contextFiles = "";
+                    // 1. Ingesta
+                    setStatusMsg("Leyendo documentos subidos...");
+                    let contextDoc = "";
                     for (const f of archivos) {
                         const t = await extractText(f);
-                        contextFiles += `\n--- ARCHIVO: ${f.name} ---\n${t}\n`;
+                        contextDoc += `\n--- ARCHIVO: ${f.name} ---\n${t}\n`;
                     }
 
-                    // 2. Orquestador: Decidir Agente, Plantilla e Internet
-                    setStatusMsg("Orquestador analizando ruta óptima...");
+                    // 2. Triaje (Orquestador decide Agente y Plantilla)
+                    setStatusMsg("El Orquestador está eligiendo el equipo de agentes...");
                     const routerPrompt = `
-                        Analiza esta petición: "${peticion}"
-                        Agentes disponibles: ${JSON.stringify(agents.map(a => a.nombre))}
-                        Plantillas disponibles: ${JSON.stringify(templates.map(t => t.nombre))}
+                        Eres un Orquestador de IA de alto nivel.
+                        PETICIÓN DEL USUARIO: "${peticion}"
+                        AGENTES DISPONIBLES: ${JSON.stringify(agents.map(a => a.nombre))}
+                        PLANTILLAS DISPONIBLES: ${JSON.stringify(templates.map(t => t.nombre))}
                         
-                        Responde estrictamente en formato JSON:
+                        Tu tarea es decidir quién procesa esto y bajo qué formato.
+                        REGLA DE BÚSQUEDA: Si la petición requiere datos actuales (precios de hoy, noticias, leyes recientes), marca 'necesitaInternet' como true.
+                        
+                        RESPONDE SÓLO EN JSON:
                         {
-                            "agente": "Nombre del agente elegido",
-                            "plantilla": "Nombre de la plantilla elegida",
-                            "necesitaInternet": true/false,
-                            "busquedaInternet": "términos de búsqueda si necesita"
+                            "agente": "Nombre del agente",
+                            "plantilla": "Nombre de la plantilla",
+                            "necesitaInternet": boolean,
+                            "busqueda": "término de búsqueda si aplica"
                         }
                     `;
-                    const routerRes = await callGemini(routerPrompt);
+                    const routerRes = await callGemini(routerPrompt, aiModel);
                     const decision = JSON.parse(routerRes.match(/\{[\s\S]*\}/)[0]);
 
-                    let contextInternet = "";
+                    // 3. Agente de Búsqueda (si aplica)
+                    let internetInfo = "";
                     if (decision.necesitaInternet) {
-                        setStatusMsg("Agente de Búsqueda consultando internet...");
-                        contextInternet = await callGemini(`Briefing sobre: ${decision.busquedaInternet}`, true);
+                        setStatusMsg("Agente de Búsqueda consultando la red...");
+                        internetInfo = await callGemini(`Recopila información actualizada sobre: ${decision.busqueda}`, aiModel, true);
                     }
 
-                    // 3. Ejecución Final con el Agente Especialista
-                    setStatusMsg(`Agente [${decision.agente}] generando respuesta final...`);
-                    const agenteObj = agents.find(a => a.nombre === decision.agente) || agents[0];
-                    const templateObj = templates.find(t => t.nombre === decision.plantilla) || templates[0];
+                    // 4. Ejecución Agente Especialista
+                    setStatusMsg(`Ejecutando Agente: ${decision.agente}...`);
+                    const selectedAgent = agents.find(a => a.nombre === decision.agente) || agents[0];
+                    const selectedTemplate = templates.find(t => t.nombre === decision.plantilla) || templates[0];
 
                     const finalPrompt = `
-                        ROL: ${agenteObj.instrucciones}
-                        PLANTILLA DE SALIDA: ${templateObj.descripcion} ${templateObj.ejemplo ? `(Estructura base: ${templateObj.ejemplo})` : ''}
+                        ROL: ${selectedAgent.instrucciones}
                         
-                        CONTEXTO DOCUMENTOS: ${contextFiles}
-                        CONTEXTO INTERNET: ${contextInternet}
+                        CONTEXTO DOCUMENTAL:
+                        ${contextDoc}
                         
-                        PETICIÓN DEL USUARIO: ${peticion}
+                        CONTEXTO INTERNET:
+                        ${internetInfo}
                         
-                        Genera el resultado final con estilo profesional y refinado:
+                        FORMATO DE SALIDA REQUERIDO:
+                        Nombre: ${selectedTemplate.nombre}
+                        Descripción: ${selectedTemplate.descripcion}
+                        ${selectedTemplate.ejemplo ? `Modelo de ejemplo a imitar: ${selectedTemplate.ejemplo}` : ''}
+                        
+                        PETICIÓN FINAL DEL USUARIO:
+                        "${peticion}"
+                        
+                        Instrucción: Genera un resultado detallado, profesional y refinado.
                     `;
-                    
-                    const finalRes = await callGemini(finalPrompt);
+
+                    const finalRes = await callGemini(finalPrompt, aiModel);
                     setResultado(finalRes);
 
                 } catch (e) {
-                    alert("Error: " + e.message);
+                    alert("Error en la orquestación: " + e.message);
                 } finally {
-                    setLoading(false);
-                    setStatusMsg('');
+                    setLoading(false); setStatusMsg('');
                 }
             };
 
-            // --- SINCRONIZACIÓN ---
-            const syncData = async (mode = 'upload') => {
+            // --- SINCRONIZACIÓN CON DRIVE (REUTILIZADA) ---
+            const uploadToCloud = async () => {
+                const url = simpleDecrypt(gScriptUrl);
+                if (!url) return alert("Configura la URL de Google Script.");
+                setSyncStatus('syncing');
+                try {
+                    const now = Date.now();
+                    const payload = { timestamp: now, agents, templates, apiKey, aiModel, availableModels, appPin, _s_st };
+                    await fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                    setLocalTimestamp(now); setSyncStatus('synced');
+                } catch (e) { setSyncStatus('error'); }
+            };
+
+            const downloadFromCloud = async () => {
                 const url = simpleDecrypt(gScriptUrl);
                 if (!url) return;
                 try {
-                    if (mode === 'upload') {
-                        const payload = { timestamp: Date.now(), agents, templates, apiKey, aiModel, availableModels };
-                        await fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-                    } else {
-                        const resp = await fetch(url);
-                        const data = await resp.json();
-                        if (data.timestamp > 0) {
-                            if (data.agents) setAgents(data.agents);
-                            if (data.templates) setTemplates(data.templates);
-                            if (data.apiKey) setApiKey(data.apiKey);
-                        }
+                    const resp = await fetch(url);
+                    const data = await resp.json();
+                    if (data.timestamp > 0) {
+                        if (data.agents) setAgents(data.agents);
+                        if (data.templates) setTemplates(data.templates);
+                        if (data.apiKey) setApiKey(data.apiKey);
+                        if (data.aiModel) setAiModel(data.aiModel);
+                        if (data.availableModels) setAvailableModels(data.availableModels);
+                        if (data.appPin) setAppPin(data.appPin);
+                        if (data._s_st) _s_set(data._s_st);
+                        setLocalTimestamp(data.timestamp);
                     }
-                } catch (e) { console.error("Error Sync:", e); }
+                } catch (e) { console.error(e); }
             };
 
-            return (
-                <div className="flex flex-col h-screen overflow-hidden">
-                    {/* Header */}
-                    <header className="px-6 py-4 glass-panel border-b border-white/10 flex justify-between items-center shrink-0">
-                        <div>
-                            <h1 className="text-2xl font-bold tracking-tighter text-white font-['Orbitron']">
-                                Boarding<span className="text-blue-500">Gate</span> <span className="text-xs text-slate-500 font-sans">Multi Agente iA</span>
-                            </h1>
+            useEffect(() => { if(gScriptUrl) downloadFromCloud(); }, []);
+
+            // --- BLOQUEO POR PIN ---
+            if(isPinLocked) {
+                return (
+                    <div className="h-full flex flex-col items-center justify-center bg-[#0a0a0a] text-white p-4">
+                        <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center">
+                            <div className="mb-6"><Icons.Brain size={40} className="mx-auto text-blue-600 mb-2"/><h2 className="text-2xl font-display font-bold">Boarding<span className="text-blue-600">Gate</span></h2><p className="text-xs text-slate-400 uppercase tracking-widest">Acceso Restringido</p></div>
+                            <input type="password" value={enteredPin} onChange={e => { const val = e.target.value.slice(0,4); setEnteredPin(val); if(val === appPin) setIsPinLocked(false); }} placeholder="PIN" className="w-full bg-black/50 border border-slate-700 rounded-xl p-4 text-center text-3xl font-mono tracking-[1em] text-white focus:border-blue-500 focus:outline-none mb-4" autoFocus />
                         </div>
-                        <nav className="flex gap-2 bg-black/40 p-1 rounded-xl border border-white/5">
-                            <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'dashboard' ? 'active-tab' : 'text-slate-400 hover:text-white'}`}><Icons.Brain/> Dashboard</button>
-                            <button onClick={() => setActiveTab('agentes')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'agentes' ? 'active-tab' : 'text-slate-400 hover:text-white'}`}><Icons.Users/> Agentes</button>
-                            <button onClick={() => setActiveTab('plantillas')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'plantillas' ? 'active-tab' : 'text-slate-400 hover:text-white'}`}><Icons.FileText/> Plantillas</button>
-                            <button onClick={() => setActiveTab('ajustes')} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'ajustes' ? 'active-tab' : 'text-slate-400 hover:text-white'}`}><Icons.Settings/> Ajustes</button>
+                    </div>
+                );
+            }
+
+            return (
+                <div id="root">
+                    {/* Header Reutilizado */}
+                    <header className="shrink-0 bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between items-center z-50">
+                        <div>
+                            <h1 className="text-2xl font-bold font-['Orbitron']">Boarding<span className="text-blue-600">Gate</span></h1>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Multi Agente iA & Orquestador</p>
+                        </div>
+                        <nav className="flex bg-slate-800 rounded-lg p-1 gap-1 border border-slate-700">
+                            <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase flex items-center gap-2 transition-all ${activeTab === 'dashboard' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}><Icons.Brain/> Dashboard</button>
+                            <button onClick={() => setActiveTab('agentes')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase flex items-center gap-2 transition-all ${activeTab === 'agentes' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}><Icons.User/> Agentes</button>
+                            <button onClick={() => setActiveTab('plantillas')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase flex items-center gap-2 transition-all ${activeTab === 'plantillas' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}><Icons.File/> Plantillas</button>
+                            <button onClick={() => setActiveTab('settings')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase flex items-center gap-2 transition-all ${activeTab === 'settings' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}><Icons.Settings/> Ajustes</button>
                         </nav>
                     </header>
 
-                    {/* Main Content */}
-                    <main className="flex-1 overflow-y-auto custom-scrollbar p-6 relative">
+                    <main className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                        
                         {loading && (
-                            <div className="absolute inset-0 z-[200] bg-black/60 backdrop-blur-md flex flex-col items-center justify-center fade-in">
-                                <div className="text-blue-500 mb-4"><Icons.Loader/></div>
+                            <div className="absolute inset-0 z-[200] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center fade-in">
+                                <div className="text-blue-500 mb-4"><Icons.Loader size={60}/></div>
                                 <div className="text-xl font-bold text-white mb-2">{statusMsg}</div>
-                                <div className="text-xs text-slate-400 animate-pulse">Este proceso puede tomar unos segundos...</div>
+                                <div className="text-xs text-slate-400 animate-pulse uppercase tracking-[0.2em]">Consultando Red Neuronal</div>
                             </div>
                         )}
 
                         {activeTab === 'dashboard' && (
                             <div className="max-w-4xl mx-auto space-y-6 fade-in">
-                                <div className="glass-panel p-6 rounded-3xl space-y-4">
-                                    <div className="flex justify-between items-end">
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Motor de IA Activo</label>
-                                        <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="text-[10px] font-bold py-1 px-3">
+                                <div className="glass-panel p-8 rounded-3xl space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <h3 className="text-xs font-black uppercase text-blue-400 tracking-widest">Nueva Petición al Sistema</h3>
+                                        <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="text-[10px] font-bold py-1">
                                             {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
                                         </select>
                                     </div>
-                                    <textarea 
-                                        value={peticion}
-                                        onChange={e => setPeticion(e.target.value)}
-                                        placeholder="Describe tu petición aquí... (Ej: Analiza estas facturas y hazme un informe comparativo con los precios de mercado)"
-                                        className="w-full h-32 bg-slate-950 border border-slate-800 rounded-2xl p-4 text-sm focus:border-blue-500 outline-none transition-all"
-                                    />
-                                    <div className="flex items-center gap-4">
-                                        <label className="flex-1 cursor-pointer bg-slate-800/40 border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-2xl p-4 transition-all text-center">
+                                    <textarea value={peticion} onChange={e => setPeticion(e.target.value)} placeholder="Ejemplo: Revisa estas tres facturas y hazme un informe comparativo detallado siguiendo el formato de mi plantilla de auditoría..." className="w-full h-40 bg-slate-950/50 border border-slate-700 rounded-2xl p-5 text-sm focus:border-blue-500 outline-none transition-all shadow-inner" />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <label className="flex flex-col items-center justify-center bg-slate-800/40 border-2 border-dashed border-slate-600 rounded-2xl p-6 hover:border-blue-500 transition-all cursor-pointer group">
                                             <input type="file" multiple onChange={e => setArchivos([...archivos, ...Array.from(e.target.files)])} className="hidden" />
-                                            <div className="flex flex-col items-center gap-2">
-                                                <Icons.Upload/>
-                                                <span className="text-[10px] font-bold uppercase text-slate-400">Subir Documentos (PDF, DOCX, XLSX)</span>
-                                            </div>
+                                            <Icons.Upload className="text-slate-500 mb-2 group-hover:scale-110 transition-transform" size={32}/>
+                                            <span className="text-[10px] font-black uppercase text-slate-400">Adjuntar PDF, Word o Excel</span>
                                         </label>
-                                        <button onClick={procesarPeticion} className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-900/20 transition-all active:scale-95">
-                                            Procesar
-                                        </button>
+                                        <button onClick={procesarOrquestador} className="bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-xl shadow-blue-900/20 active:scale-95 transition-all">Ejecutar Misión</button>
                                     </div>
                                     {archivos.length > 0 && (
-                                        <div className="flex flex-wrap gap-2 pt-2">
+                                        <div className="flex flex-wrap gap-2 mt-4">
                                             {archivos.map((f, i) => (
-                                                <div key={i} className="bg-blue-500/10 text-blue-400 text-[10px] px-3 py-1 rounded-full border border-blue-500/20 flex items-center gap-2">
-                                                    {f.name} <button onClick={() => setArchivos(archivos.filter((_, idx) => idx !== i))}>✕</button>
+                                                <div key={i} className="bg-blue-600/20 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-2">
+                                                    {f.name} <button onClick={() => setArchivos(archivos.filter((_,idx) => idx !== i))}>✕</button>
                                                 </div>
                                             ))}
                                         </div>
@@ -306,10 +349,10 @@
                                 </div>
 
                                 {resultado && (
-                                    <div className="glass-panel p-8 rounded-3xl fade-in bg-white/5 border-blue-500/20">
-                                        <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
-                                            <h3 className="text-blue-400 font-bold text-xs uppercase tracking-widest flex items-center gap-2"><Icons.FileText/> Resultado del Análisis</h3>
-                                            <button onClick={() => navigator.clipboard.writeText(resultado)} className="text-[10px] font-bold bg-slate-800 px-3 py-1 rounded-lg hover:bg-slate-700">Copiar</button>
+                                    <div className="glass-panel p-8 rounded-3xl border-l-4 border-l-blue-500 fade-in">
+                                        <div className="flex justify-between items-center mb-6">
+                                            <h4 className="text-blue-400 font-black text-xs uppercase tracking-widest">Resultado Orquestado</h4>
+                                            <button onClick={() => navigator.clipboard.writeText(resultado)} className="text-[10px] font-bold bg-slate-800 px-4 py-2 rounded-xl hover:bg-slate-700">COPIAR TEXTO</button>
                                         </div>
                                         <div className="text-slate-200 text-sm leading-relaxed whitespace-pre-wrap font-sans">
                                             {resultado}
@@ -320,21 +363,17 @@
                         )}
 
                         {activeTab === 'agentes' && (
-                            <div className="max-w-4xl mx-auto space-y-4 fade-in">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h2 className="text-xl font-bold">Mis Agentes Expertos</h2>
-                                    <button onClick={() => setAgents([...agents, {id: Date.now(), nombre: 'Nuevo Agente', instrucciones: ''}])} className="bg-blue-600 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2"><Icons.Plus/> Nuevo</button>
+                            <div className="max-w-5xl mx-auto space-y-6 fade-in">
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-xl font-bold">Gestión de Agentes Expertos</h2>
+                                    <button onClick={() => setAgents([...agents, {id: Date.now(), nombre: 'Nuevo Agente', instrucciones: ''}])} className="bg-blue-600 px-6 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg"><Icons.Plus/> Crear Agente</button>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {agents.map((agent, i) => (
-                                        <div key={agent.id} className="glass-panel p-5 rounded-2xl border border-white/5 space-y-3">
-                                            <input value={agent.nombre} onChange={e => {
-                                                const n = [...agents]; n[i].nombre = e.target.value; setAgents(n);
-                                            }} className="w-full font-bold text-blue-400 text-sm" placeholder="Nombre del Agente" />
-                                            <textarea value={agent.instrucciones} onChange={e => {
-                                                const n = [...agents]; n[i].instrucciones = e.target.value; setAgents(n);
-                                            }} className="w-full h-32 text-xs" placeholder="Instrucciones del rol (System Prompt)..." />
-                                            <button onClick={() => setAgents(agents.filter(a => a.id !== agent.id))} className="text-red-500 text-[10px] uppercase font-bold flex items-center gap-1 hover:text-red-400"><Icons.Trash/> Eliminar</button>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {agents.map((ag, i) => (
+                                        <div key={ag.id} className="glass-panel p-6 rounded-2xl space-y-4">
+                                            <input value={ag.nombre} onChange={e => { const n = [...agents]; n[i].nombre = e.target.value; setAgents(n); }} className="w-full text-blue-400 font-black uppercase text-sm border-none bg-black/30" />
+                                            <textarea value={ag.instrucciones} onChange={e => { const n = [...agents]; n[i].instrucciones = e.target.value; setAgents(n); }} placeholder="Instrucciones del rol..." className="w-full h-40 text-xs leading-relaxed" />
+                                            <button onClick={() => setAgents(agents.filter(x => x.id !== ag.id))} className="text-red-500 text-[10px] font-black uppercase flex items-center gap-2"><Icons.Trash/> Eliminar</button>
                                         </div>
                                     ))}
                                 </div>
@@ -342,95 +381,122 @@
                         )}
 
                         {activeTab === 'plantillas' && (
-                            <div className="max-w-4xl mx-auto space-y-4 fade-in">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h2 className="text-xl font-bold">Modelos de Salida</h2>
-                                    <button onClick={() => setTemplates([...templates, {id: Date.now(), nombre: 'Nueva Plantilla', descripcion: '', ejemplo: ''}])} className="bg-blue-600 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2"><Icons.Plus/> Nueva</button>
+                            <div className="max-w-5xl mx-auto space-y-6 fade-in">
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-xl font-bold">Biblioteca de Modelos de Salida</h2>
+                                    <button onClick={() => setTemplates([...templates, {id: Date.now(), nombre: 'Nuevo Modelo', descripcion: '', ejemplo: ''}])} className="bg-purple-600 px-6 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg"><Icons.Plus/> Crear Modelo</button>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {templates.map((temp, i) => (
-                                        <div key={temp.id} className="glass-panel p-5 rounded-2xl space-y-3">
-                                            <input value={temp.nombre} onChange={e => {
-                                                const n = [...templates]; n[i].nombre = e.target.value; setTemplates(n);
-                                            }} className="w-full font-bold text-purple-400 text-sm" placeholder="Nombre del Modelo" />
-                                            <textarea value={temp.descripcion} onChange={e => {
-                                                const n = [...templates]; n[i].descripcion = e.target.value; setTemplates(n);
-                                            }} className="w-full h-24 text-xs" placeholder="Describe la estructura o reglas del formato..." />
-                                            <div className="space-y-1">
-                                                <label className="text-[10px] text-slate-500 uppercase font-bold">Ejemplo extraído de archivo</label>
-                                                <div className="flex gap-2">
-                                                    <input type="file" onChange={async e => {
-                                                        const text = await extractText(e.target.files[0]);
-                                                        const n = [...templates]; n[i].ejemplo = text.substring(0, 5000); setTemplates(n);
-                                                    }} className="text-[10px] w-full" />
-                                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {templates.map((t, i) => (
+                                        <div key={t.id} className="glass-panel p-6 rounded-2xl space-y-4">
+                                            <input value={t.nombre} onChange={e => { const n = [...templates]; n[i].nombre = e.target.value; setTemplates(n); }} className="w-full text-purple-400 font-black uppercase text-sm border-none bg-black/30" />
+                                            <textarea value={t.descripcion} onChange={e => { const n = [...templates]; n[i].descripcion = e.target.value; setTemplates(n); }} placeholder="Define el formato esperado..." className="w-full h-24 text-xs" />
+                                            <div className="bg-black/30 p-3 rounded-xl border border-slate-700">
+                                                <label className="text-[9px] font-black text-slate-500 uppercase block mb-2">Entrenar con ejemplo (.pdf, .docx, .xlsx)</label>
+                                                <input type="file" onChange={async e => {
+                                                    const text = await extractText(e.target.files[0]);
+                                                    const n = [...templates]; n[i].ejemplo = text.substring(0, 8000); setTemplates(n);
+                                                    alert("Estilo aprendido del documento.");
+                                                }} className="text-[10px] w-full" />
                                             </div>
-                                            <button onClick={() => setTemplates(templates.filter(t => t.id !== temp.id))} className="text-red-500 text-[10px] uppercase font-bold"><Icons.Trash/></button>
+                                            <button onClick={() => setTemplates(templates.filter(x => x.id !== t.id))} className="text-red-500 text-[10px] font-black uppercase flex items-center gap-2"><Icons.Trash/> Eliminar</button>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         )}
 
-                        {activeTab === 'ajustes' && (
-                            <div className="max-w-3xl mx-auto space-y-8 fade-in pb-10">
-                                {/* API KEY SECTION */}
-                                <div className="glass-panel p-8 rounded-3xl space-y-6">
-                                    <h2 className="text-xl font-bold flex items-center gap-3"><Icons.Settings/> Configuración Global</h2>
+                        {activeTab === 'settings' && (
+                            <div className="max-w-2xl mx-auto space-y-8 fade-in pb-10">
+                                {/* REUTILIZADO: CONFIGURACIÓN IA */}
+                                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+                                    <div className="flex items-center gap-4 mb-6 border-b border-slate-700 pb-4"><div className="p-3 bg-purple-500/20 rounded-xl text-purple-400"><Icons.Brain size={32} /></div><div><h2 className="text-2xl font-bold text-white">Configuración IA</h2><p className="text-slate-400 text-sm">Conexión con Google Gemini</p></div></div>
                                     
-                                    <div>
-                                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Google Gemini API Key</label>
-                                        <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="AIzaSy..." className="w-full font-mono text-xs" />
-                                    </div>
+                                    <label className="block text-sm font-bold text-slate-300 mb-2">Gemini API Key</label>
+                                    <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="AIzaSy..." className="w-full bg-black/50 border border-slate-600 rounded-xl p-4 font-mono mb-6" />
 
-                                    <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded-2xl space-y-3">
-                                        <h4 className="text-xs font-bold text-blue-400">Manual: Obtención de API KEY</h4>
-                                        <p className="text-[11px] text-slate-300"><b>Opción Gratis:</b> Ve a <a href="https://aistudio.google.com/" className="text-blue-500 underline" target="_blank">Google AI Studio</a>, pulsa en "Get API Key" y crea una. Tienes 15 consultas/minuto gratis.</p>
-                                        <p className="text-[11px] text-slate-300"><b>Opción Ilimitada:</b> En la misma web, asocia una tarjeta de crédito en Billing. El coste es despreciable (unos céntimos por millones de palabras).</p>
-                                    </div>
+                                    <label className="block text-sm font-bold text-slate-300 mb-2 uppercase">Modelo IA Activo</label>
+                                    <select value={aiModel} onChange={e => setAiModel(e.target.value)} className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 mb-6">
+                                        {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
+                                    </select>
 
-                                    <div>
-                                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Gestión de Modelos</label>
+                                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 mb-6">
+                                        <label className="block text-[10px] font-bold text-slate-500 mb-2 uppercase">Añadir Nuevo ID de Modelo</label>
                                         <div className="flex gap-2">
-                                            <input type="text" id="newMod" placeholder="ID del modelo (ej: gemini-2.0-flash)" className="flex-1 text-xs" />
-                                            <button onClick={() => {
-                                                const v = document.getElementById('newMod').value;
-                                                if(v) setAvailableModels([...availableModels, v]);
-                                            }} className="bg-slate-700 px-4 rounded-lg text-xs font-bold">Añadir</button>
+                                            <input type="text" id="newModelInput" placeholder="Ej: gemini-2.0-flash" className="flex-1 text-xs" />
+                                            <button onClick={() => { const inp = document.getElementById('newModelInput'); if(inp.value) { setAvailableModels([...availableModels, inp.value]); setAiModel(inp.value); inp.value=''; } }} className="bg-blue-600 px-4 rounded-lg text-xs font-bold uppercase">Añadir</button>
+                                        </div>
+                                    </div>
+
+                                    {/* REUTILIZADO: TUTORIAL API */}
+                                    <div className="p-6 bg-[#1e293b] border border-[#334155] rounded-xl">
+                                        <h4 className="text-lg font-bold text-blue-400 mb-4">Manual de API Key</h4>
+                                        <div className="space-y-4 text-xs text-slate-300 leading-relaxed">
+                                            <p>1. Ve a <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-blue-400 font-bold underline">Google AI Studio</a>.</p>
+                                            <p>2. Crea tu API Key (Gratis 15 req/min).</p>
+                                            <p>3. Para modo ilimitado, asocia facturación en Cloud Console (pago por uso ínfimo).</p>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* GDRIVE SECTION */}
-                                <div className="glass-panel p-8 rounded-3xl space-y-6">
-                                    <h2 className="text-xl font-bold flex items-center gap-3">☁️ Sincronización Nube (GDrive)</h2>
-                                    <div>
-                                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">URL del Google Apps Script</label>
-                                        <input type="password" value={simpleDecrypt(gScriptUrl)} onChange={e => setGScriptUrl(simpleEncrypt(e.target.value))} placeholder="https://script.google.com/..." className="w-full font-mono text-xs" />
+                                {/* REUTILIZADO: GDRIVE Y CLOUD */}
+                                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+                                    <h4 className="text-sm font-bold text-blue-400 mb-4 uppercase tracking-widest flex items-center gap-2"><Icons.Refresh size={16}/>Sincronización Cloud</h4>
+                                    <input type="password" value={simpleDecrypt(gScriptUrl)} onChange={e => setGScriptUrl(simpleEncrypt(e.target.value))} placeholder="https://script.google.com/macros/s/..." className="w-full bg-black/50 border border-slate-600 rounded-xl p-3 font-mono text-xs mb-4" />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <button onClick={uploadToCloud} className="bg-blue-600 py-3 rounded-xl font-bold uppercase text-[10px]">Guardar en Drive</button>
+                                        <button onClick={downloadFromCloud} className="bg-slate-700 py-3 rounded-xl font-bold uppercase text-[10px]">Cargar de Drive</button>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => syncData('upload')} className="flex-1 bg-blue-600 py-3 rounded-xl font-bold uppercase text-[10px]">Guardar en Drive Ahora</button>
-                                        <button onClick={() => syncData('download')} className="flex-1 bg-slate-700 py-3 rounded-xl font-bold uppercase text-[10px]">Descargar de Drive</button>
+
+                                    <div className="bg-slate-950/50 border border-slate-700 rounded-xl p-4 mt-6">
+                                        <h5 className="text-xs font-bold text-white mb-3">Tutorial Sincronización</h5>
+                                        <p className="text-[11px] text-slate-400">Pega el código en Google Apps Script, implementa como Aplicación Web y autoriza el acceso a Drive.</p>
+                                        <pre className="bg-black text-green-500 p-2 text-[8px] mt-2 overflow-x-auto">
+{`function doPost(e) {
+  var data = JSON.parse(e.postData.contents);
+  var file = DriveApp.getFilesByName("BG_AGENTS_DB.json").next();
+  file.setContent(JSON.stringify(data));
+  return ContentService.createTextOutput("OK");
+}`}
+                                        </pre>
+                                    </div>
+                                </div>
+
+                                {/* REUTILIZADO: SEGURIDAD PIN */}
+                                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+                                    <h2 className="text-xl font-bold mb-4 flex items-center gap-3 text-red-400"><Icons.Eye size={32} /> Seguridad de Acceso</h2>
+                                    <input type="password" value={appPin} onChange={e => setAppPin(e.target.value.replace(/\D/g,'').slice(0,4))} placeholder="PIN 4 dígitos" className="w-full bg-slate-800 border border-slate-600 rounded-xl p-4 text-center text-2xl tracking-[1em]" />
+                                    <p className="text-[10px] text-slate-500 mt-2 italic text-center">Deja vacío para desactivar el bloqueo al inicio.</p>
+                                </div>
+
+                                {/* REUTILIZADO: ESTADO DEL SISTEMA / HASH */}
+                                <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+                                    <h2 className="text-2xl font-bold text-white border-b border-slate-700 pb-4 mb-6">Estado del Sistema</h2>
+                                    <div className="bg-black/30 p-5 rounded-xl border border-slate-700">
+                                        <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Hash de Instalación</label>
+                                        <div className="flex gap-3">
+                                            <input type="text" id="licInput" placeholder="XXXX-XXXX" className="flex-1 bg-slate-900 border border-slate-600 rounded-lg p-3 text-white font-mono" />
+                                            <button onClick={() => { const v = document.getElementById('licInput').value; if(_0x8f(v)) { _s_set(_0xT); alert("Validado."); } else { alert("Error."); } }} className="px-6 py-2 bg-blue-600 rounded-lg font-bold text-xs uppercase">Verificar</button>
+                                        </div>
+                                        {_0xAuth && <div className="mt-3 text-center text-green-400 text-xs font-bold uppercase tracking-widest">● SISTEMA ACTIVADO</div>}
                                     </div>
                                 </div>
                             </div>
                         )}
                     </main>
 
-                    {/* Footer Status */}
-                    <footer className="shrink-0 glass-panel border-t border-white/5 py-1 px-6 flex justify-between items-center text-[8px] text-slate-600 font-bold uppercase tracking-widest">
-                        <div>BoardingGate Agent v1.0 (SECURE)</div>
+                    <footer className="shrink-0 bg-slate-900 border-t border-slate-800 py-1 px-6 flex justify-between items-center text-[8px] text-slate-600 font-bold uppercase tracking-widest">
+                        <div>BoardingGate Agent 1.0 (SECURE)</div>
                         <div className="flex gap-4">
-                            <span>Sincronización: {gScriptUrl ? 'CONFIGURADA' : 'SÓLO LOCAL'}</span>
+                            <span>Sinc: {syncStatus === 'synced' ? 'Nube OK' : 'Local'}</span>
+                            <span>Licencia: {_0xAuth ? 'ACTIVA' : 'RESTRINGIDA'}</span>
                         </div>
                     </footer>
                 </div>
             );
         };
 
-        const container = document.getElementById('root');
-        const root = createRoot(container);
-        root.render(<App />);
+        createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
