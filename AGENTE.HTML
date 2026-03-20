@@ -303,6 +303,12 @@
                 reader.readAsText(file);
             };
 
+            const exportPDF=()=>{const e=document.querySelector('.ai-output-container');const o={margin:1,filename:'Informe_BG.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'in',format:'letter',orientation:'portrait'}};html2pdf().set(o).from(e).save();};
+            const exportExcel=()=>{const e=document.querySelector('.ai-output-container');const ws=XLSX.utils.table_to_sheet(e.querySelector('table')||XLSX.utils.aoa_to_sheet([[e.innerText]]));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Informe");XLSX.writeFile(wb,"Informe_BG.xlsx");};
+            const exportWord=()=>{const e=document.querySelector('.ai-output-container').innerHTML;const b=new Blob(['<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>',e,'</body></html>'],{type:'application/msword'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='Informe_BG.doc';a.click();};
+
+
+
             useEffect(() => { downloadFromCloud(); }, []);
 
             if(isPinLocked) {
@@ -380,10 +386,14 @@
                                     <div className="glass-panel p-10 rounded-3xl border-l-4 border-l-blue-500 fade-in shadow-2xl relative bg-slate-900">
                                         <div className="flex flex-wrap justify-between items-center border-b border-slate-700 pb-4 mb-6 gap-2">
                                             <div className="text-[9px] font-bold text-slate-500 uppercase">Agente: <span className="text-purple-400">{infoOrquestador?.agentes}</span> | Red: <span className="text-blue-400">{infoOrquestador?.internet}</span></div>
-                                            <div className="flex gap-2">
-                                                <button onClick={()=>navigator.clipboard.writeText(resultado.replace(/<[^>]*>/g, ''))} className="text-[9px] font-black bg-slate-800 px-3 py-1.5 rounded border border-slate-700 uppercase">Copia</button>
-                                                <button onClick={()=>window.print()} className="text-[9px] font-black bg-purple-900/40 px-3 py-1.5 rounded border border-purple-500/30 uppercase">Imprimir</button>
-                                            </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <button onClick={()=>navigator.clipboard.writeText(resultado.replace(/<[^>]*>/g,''))} className="text-[8px] font-black bg-slate-800 hover:bg-slate-700 px-2 py-1.5 rounded border border-slate-700 uppercase">Copia</button>
+                                                    <button onClick={exportPDF} className="text-[8px] font-black bg-red-900/30 hover:bg-red-900/50 text-red-400 px-2 py-1.5 rounded border border-red-500/30 uppercase">PDF</button>
+                                                    <button onClick={exportExcel} className="text-[8px] font-black bg-green-900/30 hover:bg-green-900/50 text-green-400 px-2 py-1.5 rounded border border-green-500/30 uppercase">Excel</button>
+                                                    <button onClick={exportWord} className="text-[8px] font-black bg-blue-900/30 hover:bg-blue-900/50 text-blue-400 px-2 py-1.5 rounded border border-blue-500/30 uppercase">Word</button>
+                                                    <button onClick={()=>window.print()} className="text-[8px] font-black bg-purple-900/30 hover:bg-purple-900/50 text-purple-400 px-2 py-1.5 rounded border border-purple-500/30 uppercase">Imprimir</button>
+                                                </div>                                            
+
                                         </div>
                                         <div className="ai-output-container" dangerouslySetInnerHTML={{ __html: resultado }}></div>
                                     </div>
