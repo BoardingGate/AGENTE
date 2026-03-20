@@ -43,6 +43,9 @@
             body { background: white !important; color: black !important; }
             .no-print { display: none !important; }
             .ai-output-container { color: black !important; }
+            .ai-output-container h1, .ai-output-container h2, .ai-output-container h3 { color: #1e3a8a !important; border-bottom: 1px solid #ccc !important; }
+            .ai-output-container table, .ai-output-container td, .ai-output-container th { border: 1px solid #666 !important; color: black !important; }
+            .ai-output-container th { background: #f1f5f9 !important; }
         }
     </style>
 </head>
@@ -53,7 +56,11 @@
         const { useState, useEffect, useMemo, useRef, useCallback } = React;
         const { createRoot } = ReactDOM;
 
-        const DEFAULT_AI_MODELS = ["gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-1.5-flash"];
+        const DEFAULT_AI_MODELS = [
+            "gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-1.5-flash",
+            "gemini-3.1-pro-preview", "gemini-3-pro-preview", "gemini-3-flash-preview"
+        ];
+
         const _0xL = '__sys_reg_st'; 
         const _0xT = 'ACTIVATED_V3_SECURE';
         const _0x8f = (k) => { try { const _d = new Date(); const _v = Object.values(new Intl.DateTimeFormat('es').formatToParts(_d)).filter(p => ['day', 'month', 'year'].includes(p.type)).reduce((a, b) => a + parseInt(b.value), 0) * _d.getDate(); return k === _v.toString(16).toUpperCase(); } catch { return false; } };
@@ -73,14 +80,19 @@
             FileText: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>,
             Upload: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
             Trash: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>,
-            Search: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
-            Magic: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><path d="M15 4V2m0 14v-2M8 9h2m10 0h2m-4.2-4.2L14.4 6.2M4.2 15.8l1.4-1.4M18.5 18l-7-7L7 15.5l7 7 4.5-4.5z"/></svg>,
+            Trash2: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+            Check: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><polyline points="20 6 9 17 4 12"/></svg>,
             Refresh: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>,
             History: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>,
+            Search: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+            Magic: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><path d="M15 4V2m0 14v-2M8 9h2m10 0h2m-4.2-4.2L14.4 6.2M4.2 15.8l1.4-1.4M18.5 18l-7-7L7 15.5l7 7 4.5-4.5z"/></svg>,
+            Eye: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+            EyeOff: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>,
+            Loader: (p) => <svg className="animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="18" height="18"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>,
+            CheckCircle: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
             AlertCircle: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
             Globe: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
-            Plus: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-            Loader: (p) => <svg className="animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="18" height="18"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            Plus: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         };
 
         const extractTextFromFile = async (file) => {
@@ -112,6 +124,8 @@
 
         const App = () => {
             const [activeTab, setActiveTab] = useState('dashboard');
+            
+            // --- ESTADOS PERSISTENTES ---
             const [apiKey, setApiKey] = usePersistentState('bg_ag_api_key', '');
             const [gScriptUrl, setGScriptUrl] = usePersistentState('bg_ag_gs_url', '');
             const [aiModel, setAiModel] = usePersistentState('bg_ag_ai_model', DEFAULT_AI_MODELS[0]);
@@ -120,26 +134,33 @@
             const [_s_st, _s_set] = usePersistentState(_0xL, '');
             const [localTimestamp, setLocalTimestamp] = usePersistentState('bg_ag_ts', Date.now());
             
-            const [agents, setAgents] = usePersistentState('bg_ag_agents_data', [{id: 1, nombre: 'Analista Senior', instrucciones: 'Eres un analista CFA.'}]);
-            const [templates, setTemplates] = usePersistentState('bg_ag_temps_data', [{id: 1, nombre: 'Informe', descripcion: 'Formato informe ejecutivo.'}]);
-            const [history, setHistory] = usePersistentState('bg_ag_history_v3', []);
+            const [agents, setAgents] = usePersistentState('bg_ag_agents_data', [{id: 1, nombre: 'Analista Senior', instrucciones: 'Eres un CFA analista senior.'}]);
+            const [templates, setTemplates] = usePersistentState('bg_ag_temps_data', [{id: 1, nombre: 'Informe', descripcion: 'Formato informe.'}]);
+            const [peticionHistory, setPeticionHistory] = usePersistentState('bg_ag_history_v4', []);
             
+            // --- ESTADOS UI ---
             const [loading, setLoading] = useState(false);
             const [statusMsg, setStatusMsg] = useState('');
             const [syncStatus, setSyncStatus] = useState('idle');
             const [isPinLocked, setIsPinLocked] = useState(!!appPin);
             const [enteredPin, setEnteredPin] = useState('');
-            
+            const [showKey, setShowKey] = useState(false);
+            const [showUrl, setShowUrl] = useState(false);
+            const [testStatus, setTestStatus] = useState(null);
+
             const [peticion, setPeticion] = useState('');
             const [archivos, setArchivos] = useState([]);
             const [resultado, setResultado] = useState('');
             const [infoOrquestador, setInfoOrquestador] = useState(null);
             
+            // --- ESTADOS DE BÚSQUEDA ---
+            const [searchHistory, setSearchHistory] = useState('');
             const [searchAgents, setSearchAgents] = useState('');
             const [searchTemplates, setSearchTemplates] = useState('');
-            const [searchHistory, setSearchHistory] = useState('');
 
             const _0xAuth = useMemo(() => _s_st === _0xT, [_s_st]);
+
+            // --- IA FUNCTIONS ---
 
             const callGemini = async (prompt, model, useSearch = false) => {
                 const body = { contents: [{ parts: [{ text: prompt }] }] };
@@ -153,43 +174,21 @@
                 return data.candidates[0].content.parts[0].text;
             };
 
-            const uploadToCloud = useCallback(async (isAuto = false) => {
-                const url = simpleDecrypt(gScriptUrl); if (!url) return;
-                setSyncStatus('syncing');
+            const autoPromptIA = async (tipo, index) => {
+                const target = tipo === 'agente' ? agents[index] : templates[index];
+                if (!target.nombre) return alert("Define un nombre primero.");
+                setLoading(true); setStatusMsg("Generando Prompt Estratégico...");
                 try {
-                    const now = Date.now();
-                    const payload = { timestamp: now, agents, templates, history, apiKey, aiModel, availableModels, appPin, _s_st };
-                    await fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-                    setLocalTimestamp(now); setSyncStatus('synced');
-                } catch (e) { setSyncStatus('error'); }
-            }, [agents, templates, history, apiKey, aiModel, availableModels, appPin, _s_st, gScriptUrl]);
-
-            const downloadFromCloud = async () => {
-                const url = simpleDecrypt(gScriptUrl); if (!url) return;
-                try {
-                    const resp = await fetch(url); const data = await resp.json();
-                    if (data.timestamp > localTimestamp) {
-                        if(data.agents) setAgents(data.agents); if(data.templates) setTemplates(data.templates);
-                        if(data.history) setHistory(data.history); if(data.apiKey) setApiKey(data.apiKey);
+                    const prompt = tipo === 'agente' 
+                        ? `Define instrucciones de rol expertas para un agente iA llamado "${target.nombre}". Debe ser técnico, profesional y detallado.`
+                        : `Define una estructura técnica y sugerencias de salida para un informe llamado "${target.nombre}".`;
+                    const res = await callGemini(prompt, aiModel);
+                    if (tipo === 'agente') {
+                        const n = [...agents]; n[index].instrucciones = res; setAgents(n);
+                    } else {
+                        const n = [...templates]; n[index].descripcion = res; setTemplates(n);
                     }
-                } catch (e) { console.error(e); }
-            };
-
-            const autoPromptAgent = async (idx) => {
-                const name = agents[idx].nombre; if(!name) return alert("Pon un nombre al agente.");
-                setLoading(true); setStatusMsg("Diseñando cerebro del agente...");
-                try {
-                    const res = await callGemini(`Escribe un prompt de sistema profesional para un agente iA experto llamado "${name}". Define su tono, conocimientos técnicos y metodología de análisis. Sé muy detallado.`, aiModel);
-                    const n = [...agents]; n[idx].instrucciones = res; setAgents(n); uploadToCloud(true);
-                } catch(e) { alert(e.message); } finally { setLoading(false); }
-            };
-
-            const autoPromptTemplate = async (idx) => {
-                const name = templates[idx].nombre; if(!name) return alert("Pon un nombre a la plantilla.");
-                setLoading(true); setStatusMsg("Diseñando estructura de informe...");
-                try {
-                    const res = await callGemini(`Escribe una descripción técnica para un formato de salida de iA llamado "${name}". Indica cómo deben usarse las tablas, los encabezados y qué secciones clave no pueden faltar para un resultado impecable.`, aiModel);
-                    const n = [...templates]; n[idx].descripcion = res; setTemplates(n); uploadToCloud(true);
+                    uploadToCloud(true);
                 } catch(e) { alert(e.message); } finally { setLoading(false); }
             };
 
@@ -198,46 +197,103 @@
                 if(!peticion.trim()) return;
                 setLoading(true); setResultado('');
                 try {
-                    setStatusMsg("Extrayendo contexto de archivos...");
+                    setStatusMsg("Red de Seguridad: Validando petición...");
                     let contextDoc = "";
-                    for(const f of archivos) contextDoc += `\n- DOCUMENTO: ${f.name}\n${await extractTextFromFile(f)}\n`;
+                    for(const f of archivos) contextDoc += `\n- DOC: ${f.name}\n${await extractTextFromFile(f)}\n`;
                     
-                    setStatusMsg("Seguridad de Red: Validando misión...");
-                    const checkPrompt = `Analiza la misión: "${peticion}". Agentes: ${JSON.stringify(agents.map(a=>a.nombre))}. Formatos: ${JSON.stringify(templates.map(t=>t.nombre))}. 
-                    Responde SOLO en JSON: {"valid":boolean, "mensaje_usuario":"string", "agente":"nombre", "plantilla":"nombre", "search":boolean, "query":"string"}. 
-                    Si la misión es ambigua o faltan datos críticos de los archivos para poder responder, pon valid=false y pide educadamente lo que falta.`;
+                    const securityPrompt = `PETICIÓN: "${peticion}". Agentes: ${JSON.stringify(agents.map(a=>a.nombre))}. Formatos: ${JSON.stringify(templates.map(t=>t.nombre))}. 
+                    Analiza si la información es SUFICIENTE para dar una respuesta experta. 
+                    JSON: {"valid":boolean, "error_msg":"string", "agente":"nombre", "plantilla":"nombre", "internet":boolean, "query":"string"}`;
                     
-                    const routerRes = await callGemini(checkPrompt, aiModel);
-                    const decision = JSON.parse(routerRes.match(/\{[\s\S]*\}/)[0]);
+                    const securityRes = await callGemini(securityPrompt, aiModel);
+                    const decision = JSON.parse(securityRes.match(/\{[\s\S]*\}/)[0]);
                     
-                    if(!decision.valid) {
-                        setResultado(`<div class="bg-red-900/20 border border-red-500 p-6 rounded-2xl text-red-400 font-bold uppercase tracking-widest text-center"><Icons.AlertCircle className="mx-auto mb-2"/> ORQUESTADOR BLOQUEADO: ${decision.mensaje_usuario}</div>`);
+                    if (!decision.valid) {
+                        setResultado(`<div class="bg-red-900/20 border border-red-500 p-8 rounded-3xl text-red-400 font-bold uppercase tracking-widest text-center shadow-2xl"><Icons.AlertCircle className="mx-auto mb-4" size={40}/> ORQUESTADOR BLOQUEADO:<br/>${decision.error_msg}</div>`);
                         setLoading(false); return;
                     }
 
                     let internet = "";
-                    if(decision.search) {
-                        setStatusMsg(`Mejora Activa: Consultando red global sobre "${decision.query}"...`);
-                        internet = await callGemini(`Briefing completo y verídico sobre: ${decision.query}`, aiModel, true);
+                    if(decision.internet) {
+                        setStatusMsg("Mejora Activa: Consultando red global...");
+                        internet = await callGemini(`Dame datos actuales y verídicos sobre: ${decision.query}`, aiModel, true);
                     }
-                    
+
                     const ag = agents.find(a=>a.nombre===decision.agente) || agents[0];
                     const tp = templates.find(t=>t.nombre===decision.plantilla) || templates[0];
-                    setInfoOrquestador({ agentes: ag.nombre, plantilla: tp.nombre, internet: decision.search ? 'Sí' : 'No' });
+                    setInfoOrquestador({ agentes: ag.nombre, plantilla: tp.nombre, internet: decision.internet ? 'Sí' : 'No' });
 
-                    setStatusMsg(`Agente ${ag.nombre} generando informe estratégico...`);
-                    const finalPrompt = `ROL: ${ag.instrucciones}. FORMATO: ${tp.descripcion}. ESTILO: ${tp.ejemplo}. INTERNET: ${internet}. DOCS: ${contextDoc}. PETICION: ${peticion}. REGLA: SIN ALUCINACIONES. HTML PURO.`;
+                    setStatusMsg(`Generando informe con Agente ${ag.nombre}...`);
+                    const finalPrompt = `ROL: ${ag.instrucciones}. FORMATO: ${tp.descripcion}. ESTILO: ${tp.ejemplo}. INTERNET: ${internet}. DOCS: ${contextDoc}. PETICION: ${peticion}. REGLA: SON DATOS REALES. HTML PURO.`;
                     const res = await callGemini(finalPrompt, aiModel);
                     setResultado(res.replace(/```html/g, '').replace(/```/g, ''));
                     
-                    setHistory(prev => [{id: Date.now(), texto: peticion, desc: peticion.substring(0,60)+'...'}, ...prev].slice(0, 15));
+                    setPeticionHistory(prev => [{id: Date.now(), texto: peticion, desc: peticion.substring(0,60)+'...'}, ...prev].slice(0, 15));
                     uploadToCloud(true);
                 } catch(e) { alert(e.message); } finally { setLoading(false); setStatusMsg(''); }
             };
 
-            const filteredHistory = history.filter(h => h.texto.toLowerCase().includes(searchHistory.toLowerCase()));
-            const filteredAgents = agents.filter(a => a.nombre.toLowerCase().includes(searchAgents.toLowerCase()));
-            const filteredTemplates = templates.filter(t => t.nombre.toLowerCase().includes(searchTemplates.toLowerCase()));
+            // --- SYNC FUNCTIONS ---
+
+            const uploadToCloud = useCallback(async (isAuto = false) => {
+                const url = simpleDecrypt(gScriptUrl); if (!url) return;
+                setSyncStatus('syncing');
+                try {
+                    const now = Date.now();
+                    const payload = { timestamp: now, agents, templates, peticionHistory, apiKey, aiModel, availableModels, appPin, _s_st };
+                    await fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                    setLocalTimestamp(now); setSyncStatus('synced');
+                } catch (e) { setSyncStatus('error'); }
+            }, [agents, templates, peticionHistory, apiKey, aiModel, availableModels, appPin, _s_st, gScriptUrl]);
+
+            const downloadFromCloud = async () => {
+                const url = simpleDecrypt(gScriptUrl); if (!url) return;
+                try {
+                    const resp = await fetch(url); const data = await resp.json();
+                    if (data.timestamp > localTimestamp) {
+                        if(data.agents) setAgents(data.agents); if(data.templates) setTemplates(data.templates);
+                        if(data.apiKey) setApiKey(data.apiKey); if(data.peticionHistory) setPeticionHistory(data.peticionHistory);
+                        setLocalTimestamp(data.timestamp);
+                    }
+                } catch (e) { }
+            };
+
+            const testConnection = async () => {
+                if(!apiKey) return alert("Introduce una clave.");
+                setTestStatus('loading');
+                try {
+                    await callGemini("Responde OK", aiModel);
+                    setTestStatus('success');
+                    setTimeout(() => setTestStatus(null), 3000);
+                } catch(e) { setTestStatus('error'); alert(e.message); }
+            };
+
+            const handleExportBackup = () => {
+                const data = { agents, templates, apiKey, aiModel, availableModels, appPin, _s_st, ts: localTimestamp };
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = `BG_Backup.json`; a.click();
+            };
+
+            const handleImportBackup = (e) => {
+                const file = e.target.files[0]; if(!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const d = JSON.parse(ev.target.result);
+                        if(d.agents) setAgents(d.agents); if(d.templates) setTemplates(d.templates);
+                        if(d.apiKey) setApiKey(d.apiKey); uploadToCloud(true);
+                        alert("Restaurado.");
+                    } catch(err) { alert("Error."); }
+                };
+                reader.readAsText(file);
+            };
+
+            const handleExportPrint = () => {
+                const w = window.open('', '', 'height=800,width=900');
+                w.document.write(`<html><head><style>body{font-family:sans-serif;padding:40px;line-height:1.6;} table{width:100%;border-collapse:collapse;} th,td{border:1px solid #ccc;padding:8px;} th{background:#f1f5f9;}</style></head><body>${resultado}</body></html>`);
+                w.document.close(); setTimeout(()=>w.print(), 800);
+            };
 
             useEffect(() => { downloadFromCloud(); }, []);
 
@@ -257,10 +313,10 @@
                     <header className="shrink-0 bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between items-center z-50">
                         <div><h1 className="text-2xl font-bold font-['Orbitron']">Boarding<span className="text-blue-600">Gate</span></h1><p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Multi-Agente iA</p></div>
                         <nav className="flex bg-slate-800 rounded-xl p-1 gap-1 border border-slate-700 overflow-x-auto">
-                            <button onClick={()=>setActiveTab('dashboard')} className={`px-5 py-2.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 ${activeTab==='dashboard'?'active-tab':'text-slate-400'}`}><Icons.Brain/> Dashboard</button>
-                            <button onClick={()=>setActiveTab('agentes')} className={`px-5 py-2.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 ${activeTab==='agentes'?'active-tab':'text-slate-400'}`}><Icons.Users/> Agentes</button>
-                            <button onClick={()=>setActiveTab('plantillas')} className={`px-5 py-2.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 ${activeTab==='plantillas'?'active-tab':'text-slate-400'}`}><Icons.FileText/> Formatos</button>
-                            <button onClick={()=>setActiveTab('settings')} className={`px-5 py-2.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 ${activeTab==='settings'?'active-tab':'text-slate-400'}`}><Icons.Settings/> Ajustes</button>
+                            <button onClick={()=>setActiveTab('dashboard')} className={`px-5 py-2.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 ${activeTab==='dashboard'?'active-tab':'text-slate-400'}`}><Icons.Brain/> Consola Dashboard</button>
+                            <button onClick={()=>setActiveTab('agentes')} className={`px-5 py-2.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 ${activeTab==='agentes'?'active-tab':'text-slate-400'}`}><Icons.Users/> Mis Agentes</button>
+                            <button onClick={()=>setActiveTab('plantillas')} className={`px-5 py-2.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 ${activeTab==='plantillas'?'active-tab':'text-slate-400'}`}><Icons.FileText/> Modelos Salida</button>
+                            <button onClick={()=>setActiveTab('settings')} className={`px-5 py-2.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 ${activeTab==='settings'?'active-tab':'text-slate-400'}`}><Icons.Settings/> Ajustes Avanzados</button>
                         </nav>
                     </header>
 
@@ -277,14 +333,14 @@
                                     <div className="flex justify-between items-center text-xs font-black uppercase text-blue-400 tracking-widest">
                                         <span>Entrada de Misión</span>
                                         <div className="flex gap-4">
-                                            <button onClick={()=>setPeticion('')} className="text-[9px] text-red-500 font-black uppercase">Limpiar</button>
+                                            <button onClick={()=>setPeticion('')} className="text-[9px] text-red-500 font-black uppercase">Limpiar Texto</button>
                                             <select value={aiModel} onChange={e=>setAiModel(e.target.value)} className="text-[10px] font-bold px-3 py-1 bg-slate-900 border-slate-700 text-white">{availableModels.map(m=><option key={m} value={m}>{m}</option>)}</select>
                                         </div>
                                     </div>
-                                    <textarea value={peticion} onChange={e=>setPeticion(e.target.value)} placeholder="Introduce la misión estratégica..." className="w-full h-44 bg-slate-950 border border-slate-700 rounded-2xl p-6 text-sm outline-none focus:border-blue-500 transition-all" />
+                                    <textarea value={peticion} onChange={e=>setPeticion(e.target.value)} placeholder="Introduce la misión estratégica..." className="w-full h-44 bg-slate-950 border border-slate-700 rounded-2xl p-6 text-sm outline-none focus:border-blue-500 transition-all shadow-inner" />
                                     <div className="flex flex-col gap-4">
                                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                            <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-700 rounded-2xl p-4 cursor-pointer hover:border-blue-500 bg-slate-800/20">
+                                            <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-700 rounded-2xl p-4 cursor-pointer hover:border-blue-500 bg-slate-800/20 transition-all">
                                                 <input type="file" multiple onChange={e=>setArchivos([...archivos,...Array.from(e.target.files)])} className="hidden"/><Icons.Upload size={24}/>
                                                 <span className="text-[9px] font-black text-slate-500 mt-1 uppercase">Subir</span>
                                                 <span className="text-[7px] text-slate-600 uppercase font-black">PDF, DOCX, XLSX</span>
@@ -295,14 +351,14 @@
                                     </div>
                                 </div>
 
-                                {history.length > 0 && (
-                                    <div className="glass-panel p-6 rounded-3xl space-y-4">
+                                {peticionHistory.length > 0 && (
+                                    <div className="glass-panel p-6 rounded-3xl space-y-4 shadow-xl">
                                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                            <h3 className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2"><Icons.History/> Misiones Recientes</h3>
-                                            <div className="relative w-full md:w-64"><Icons.Search className="absolute left-3 top-2.5 text-slate-600" size={14}/><input type="text" value={searchHistory} onChange={e=>setSearchHistory(e.target.value)} placeholder="BUSCAR PETICIÓN..." className="w-full pl-10 text-[9px] uppercase font-black py-2 bg-black/40 border-slate-800"/></div>
+                                            <h3 className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 tracking-widest"><Icons.History/> Misiones Recientes</h3>
+                                            <div className="relative w-full md:w-64"><Icons.Search className="absolute left-3 top-2.5 text-slate-600" size={14}/><input type="text" value={searchHistory} onChange={e=>setSearchHistory(e.target.value)} placeholder="BUSCAR EN HISTORIAL..." className="w-full pl-10 text-[9px] uppercase font-black py-2 bg-black/40 border-slate-800"/></div>
                                         </div>
                                         <div className="space-y-1">
-                                            {filteredHistory.map(h => (
+                                            {peticionHistory.filter(h => h.texto.toLowerCase().includes(searchHistory.toLowerCase())).map(h => (
                                                 <div key={h.id} onClick={()=>setPeticion(h.texto)} className="bg-black/30 hover:bg-slate-800 p-2.5 rounded-xl text-xs cursor-pointer border border-slate-800 transition-all flex justify-between items-center group">
                                                     <span className="truncate pr-4 text-slate-400 group-hover:text-blue-400">{h.desc}</span>
                                                     <Icons.Plus size={12} className="text-slate-700 group-hover:text-blue-500"/>
@@ -316,7 +372,10 @@
                                     <div className="glass-panel p-10 rounded-3xl border-l-4 border-l-blue-500 fade-in shadow-2xl relative bg-slate-900">
                                         <div className="flex justify-between items-center border-b border-slate-700 pb-4 mb-6">
                                             <div className="text-[9px] font-bold text-slate-500 uppercase">Agente: <span className="text-purple-400">{infoOrquestador?.agentes}</span> | Red: <span className="text-blue-400">{infoOrquestador?.internet}</span></div>
-                                            <button onClick={()=>navigator.clipboard.writeText(resultado.replace(/<[^>]*>/g, ''))} className="text-[9px] font-black bg-slate-800 px-3 py-1.5 rounded border border-slate-700 uppercase">Copiar Informe</button>
+                                            <div className="flex gap-2">
+                                                <button onClick={()=>navigator.clipboard.writeText(resultado.replace(/<[^>]*>/g, ''))} className="text-[9px] font-black bg-slate-800 px-3 py-1.5 rounded border border-slate-700 uppercase">Copiar</button>
+                                                <button onClick={handleExportPrint} className="text-[9px] font-black bg-purple-900/40 px-3 py-1.5 rounded border border-purple-500/30 uppercase">PRINT</button>
+                                            </div>
                                         </div>
                                         <div className="ai-output-container" dangerouslySetInnerHTML={{ __html: resultado }}></div>
                                     </div>
@@ -330,14 +389,14 @@
                                     <h2 className="text-xl font-bold uppercase tracking-widest text-white">Agentes Especialistas</h2>
                                     <div className="flex gap-4 w-full md:w-auto">
                                         <div className="relative flex-1 md:w-64"><Icons.Search className="absolute left-3 top-2.5 text-slate-600" size={14}/><input type="text" value={searchAgents} onChange={e=>setSearchAgents(e.target.value)} placeholder="FILTRAR AGENTES..." className="w-full pl-10 text-[9px] uppercase font-black py-2 bg-black/40 border-slate-800"/></div>
-                                        <button onClick={()=>{setAgents([...agents,{id:Date.now(),nombre:'Nuevo Agente',instrucciones:''}]); uploadToCloud(true);}} className="bg-blue-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase">+ Crear</button>
+                                        <button onClick={()=>{setAgents([...agents,{id:Date.now(),nombre:'Nuevo Agente',instrucciones:''}]); uploadToCloud(true);}} className="bg-blue-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase shadow-lg">+ Crear</button>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{filteredAgents.map((ag, i) => (
-                                    <div key={ag.id} className="glass-panel p-6 rounded-2xl space-y-4 shadow-xl border border-white/5 relative group">
-                                        <div className="flex justify-between gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{agents.filter(a=>a.nombre.toLowerCase().includes(searchAgents.toLowerCase())).map((ag, i) => (
+                                    <div key={ag.id} className="glass-panel p-6 rounded-2xl space-y-4 shadow-xl border border-white/5 relative">
+                                        <div className="flex gap-2">
                                             <input value={ag.nombre} onChange={e=>{const n=[...agents]; n[i].nombre=e.target.value; setAgents(n);}} onBlur={()=>uploadToCloud(true)} className="flex-1 text-blue-400 font-black uppercase text-sm bg-black/40 border-none px-4 py-2" />
-                                            <button onClick={()=>autoPromptAgent(i)} className="bg-purple-900/40 border border-purple-500/30 p-2 rounded-xl text-purple-400 hover:bg-purple-500 hover:text-white transition-all shadow-lg" title="Autogenerar con iA"><Icons.Magic/></button>
+                                            <button onClick={()=>autoPromptIA('agente', i)} className="p-2 bg-purple-900/40 border border-purple-500/40 rounded-xl text-purple-400 hover:bg-purple-600 hover:text-white transition-all shadow-lg"><Icons.Magic/></button>
                                         </div>
                                         <textarea value={ag.instrucciones} onChange={e=>{const n=[...agents]; n[i].instrucciones=e.target.value; setAgents(n);}} onBlur={()=>uploadToCloud(true)} placeholder="Describe qué hace este agente..." className="w-full h-40 text-xs focus:outline-none bg-slate-900/30 p-4 border border-slate-800 custom-scrollbar" />
                                         <button onClick={()=>{setAgents(agents.filter(x=>x.id!==ag.id)); setTimeout(()=>uploadToCloud(true),200);}} className="text-red-500 text-[10px] font-black uppercase flex items-center gap-1 hover:bg-red-500/10 p-2 rounded transition-all"><Icons.Trash2/> Eliminar</button>
@@ -355,17 +414,16 @@
                                         <button onClick={()=>{setTemplates([...templates,{id:Date.now(),nombre:'Nuevo Formato',descripcion:'',ejemplo:''}]); uploadToCloud(true);}} className="bg-purple-600 px-6 py-2 rounded-xl text-[10px] font-black uppercase shadow-lg">+ Crear</button>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{filteredTemplates.map((t, i) => (
-                                    <div key={t.id} className="glass-panel p-6 rounded-2xl space-y-4 shadow-xl border border-white/5">
-                                        <div className="flex justify-between gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{templates.filter(t=>t.nombre.toLowerCase().includes(searchTemplates.toLowerCase())).map((t, i) => (
+                                    <div key={t.id} className="glass-panel p-6 rounded-2xl space-y-4 shadow-xl border border-white/5 relative">
+                                        <div className="flex gap-2">
                                             <input value={t.nombre} onChange={e=>{const n=[...templates]; n[i].nombre=e.target.value; setTemplates(n);}} onBlur={()=>uploadToCloud(true)} className="flex-1 text-purple-400 font-black uppercase text-sm bg-black/40 border-none px-4 py-2" />
-                                            <button onClick={()=>autoPromptTemplate(i)} className="bg-blue-900/40 border border-blue-500/30 p-2 rounded-xl text-blue-400 hover:bg-blue-500 hover:text-white transition-all shadow-lg" title="Autogenerar con iA"><Icons.Magic/></button>
+                                            <button onClick={()=>autoPromptIA('plantilla', i)} className="p-2 bg-blue-900/40 border border-blue-500/40 rounded-xl text-blue-400 hover:bg-blue-600 hover:text-white transition-all shadow-lg"><Icons.Magic/></button>
                                         </div>
                                         <textarea value={t.descripcion} onChange={e=>{const n=[...templates]; n[i].descripcion=e.target.value; setTemplates(n);}} onBlur={()=>uploadToCloud(true)} placeholder="Describe la estructura deseada..." className="w-full h-28 text-xs focus:outline-none bg-slate-900/30 p-4 border border-slate-800" />
                                         <div className="p-4 bg-black/40 rounded-xl space-y-2">
-                                            <label className="text-[9px] font-black text-slate-500 uppercase block">Cargar archivo de ejemplo</label>
+                                            <label className="text-[9px] font-black text-slate-500 uppercase block">Ejemplo Visual (PDF, DOCX, XLSX)</label>
                                             <input type="file" onChange={async e=>{setLoading(true); const txt=await extractTextFromFile(e.target.files[0]); const n=[...templates]; n[i].ejemplo=txt.substring(0,8000); setTemplates(n); uploadToCloud(true); setLoading(false); alert("Estilo copiado.");}} className="text-[10px] w-full" />
-                                            <span className="text-[7px] text-slate-600 uppercase font-black">ADMITIDOS: PDF, DOCX, XLSX</span>
                                         </div>
                                         <button onClick={()=>{setTemplates(templates.filter(x=>x.id!==t.id)); setTimeout(()=>uploadToCloud(true),200);}} className="text-red-500 text-[10px] font-black uppercase flex items-center gap-1 hover:bg-red-500/10 p-2 rounded transition-all"><Icons.Trash2/> Eliminar</button>
                                     </div>
@@ -379,25 +437,88 @@
                                 <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl">
                                     <div className="flex items-center gap-4 mb-6 border-b border-slate-700 pb-4"><div className="p-3 bg-purple-500/20 rounded-xl text-purple-400 flex items-center justify-center"><Icons.Brain/></div><div><h2 className="text-2xl font-bold text-white uppercase tracking-widest">IA Protocol</h2></div></div>
                                     <label className="block text-sm font-bold text-slate-300 mb-2">API Key de Gemini</label>
-                                    <div className="relative mb-4"><input type={showKey?"text":"password"} value={apiKey} onChange={e=>{setApiKey(e.target.value);}} onBlur={()=>uploadToCloud(true)} className="w-full bg-black/50 border border-slate-700 rounded-xl p-4 font-mono text-white focus:outline-none focus:border-purple-500"/><button onClick={()=>setShowKey(!showKey)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">VAR</button></div>
+                                    <div className="relative mb-4"><input type={showKey?"text":"password"} value={apiKey} onChange={e=>{setApiKey(e.target.value);}} onBlur={()=>uploadToCloud(true)} className="w-full bg-black/50 border border-slate-700 rounded-xl p-4 font-mono text-white focus:outline-none focus:border-purple-500"/><button onClick={()=>setShowKey(!showKey)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">{showKey?<Icons.EyeOff/>:<Icons.Eye/>}</button></div>
+                                    <div className="flex justify-end mb-8"><button onClick={testConnection} disabled={testStatus==='loading'} className={`px-6 py-2 rounded-xl border font-black text-[10px] uppercase flex items-center gap-2 transition-all shadow-md ${testStatus==='success'?'bg-green-600 text-white border-green-500':'bg-slate-800 text-slate-400 border-slate-700'}`}>{testStatus==='loading'?<Icons.Loader/>:testStatus==='success'?<Icons.CheckCircle/>:'Probar API'}</button></div>
                                     <label className="block text-sm font-bold text-slate-300 uppercase tracking-widest mb-4">Modelo Activo</label>
                                     <select value={aiModel} onChange={e=>{setAiModel(e.target.value); uploadToCloud(true);}} className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 font-mono text-sm text-white mb-6 outline-none focus:border-purple-500">{availableModels.map(m=><option key={m} value={m}>{m}</option>)}</select>
-                                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex gap-2"><input type="text" id="newMod" placeholder="ID del Modelo..." className="flex-1 text-xs bg-transparent border-none text-white focus:ring-0"/><button onClick={()=>{const i=document.getElementById('newMod'); if(i.value){setAvailableModels(prev=>[...prev,i.value]); i.value=''; setTimeout(()=>uploadToCloud(true),200);}}} className="bg-blue-600 px-6 rounded-xl font-black text-[10px] uppercase text-white shadow-lg">Añadir</button></div>
-                                    <div className="flex flex-wrap gap-2 mt-4">{availableModels.map(m=>(<div key={m} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border text-[10px] font-mono ${aiModel===m?'bg-blue-900/30 border-blue-500 text-blue-300':'bg-slate-800 border-slate-700 text-slate-400'}`}><span>{m}</span>{availableModels.length>1&&(<button onClick={()=>{setAvailableModels(prev=>prev.filter(x=>x!==m)); setTimeout(()=>uploadToCloud(true),200);}} className="text-red-500 font-bold ml-1">✕</button>)}</div>))}</div>
-                                    <div className="mt-8 p-6 bg-[#1e293b] border border-[#334155] rounded-2xl"><h4 className="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2"><Icons.AlertCircle/> Manual API</h4><div className="mb-6 border-b border-slate-700 pb-6"><h5 className="text-sm font-bold text-white mb-3">Opción Gratuita</h5><ol className="list-decimal list-inside text-xs text-slate-300 space-y-2 mb-4 leading-relaxed"><li>Accede a <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-blue-400 font-bold underline">Google AI Studio</a>.</li><li>Copia la clave y pégala arriba.</li></ol></div></div>
+                                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex gap-2"><input type="text" id="newMod" placeholder="ID del Modelo..." className="flex-1 text-xs bg-transparent border-none text-white focus:ring-0"/><button onClick={()=>{const i=document.getElementById('newMod'); if(i.value){setAvailableModels(prev=>{const n=[...prev,i.value]; return n;}); setAiModel(i.value); i.value=''; setTimeout(()=>uploadToCloud(true),200);}}} className="bg-blue-600 px-6 rounded-xl font-black text-[10px] uppercase text-white shadow-lg">Añadir</button></div>
+                                    <div className="flex flex-wrap gap-2 mt-4">{availableModels.map(m=>(<div key={m} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border text-[10px] font-mono ${aiModel===m?'bg-blue-900/30 border-blue-500 text-blue-300 shadow-md':'bg-slate-800 border-slate-700 text-slate-400'}`}><span>{m}</span>{availableModels.length>1&&(<button onClick={()=>{setAvailableModels(prev=>{const n=prev.filter(x=>x!==m); if(aiModel===m) setAiModel(n[0]); return n;}); setTimeout(()=>uploadToCloud(true),200);}} className="text-red-500 font-bold ml-1">✕</button>)}</div>))}</div>
+                                    <div className="mt-8 p-6 bg-[#1e293b] border border-[#334155] rounded-2xl"><h4 className="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2"><Icons.AlertCircle/> Manual API</h4><div className="mb-6 border-b border-slate-700 pb-6"><h5 className="text-sm font-bold text-white mb-3">Opción Gratuita</h5><ol className="list-decimal list-inside text-xs text-slate-300 space-y-2 mb-4 leading-relaxed"><li>Accede a <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-blue-400 font-bold underline">Google AI Studio</a>.</li><li>Pulsa en <strong>"Get API key"</strong> y luego en <strong>"Create API Key"</strong>.</li><li>Copia la clave y pégala arriba.</li></ol></div><h5 className="text-sm font-bold text-white mb-3">Opción de Pago</h5><p className="text-xs text-slate-300">Asocia tarjeta en "Billing" de AI Studio. El coste es ínfimo y sin límites.</p></div>
                                 </div>
 
                                 {/* SYNC GDRIVE EXACTO BOLSA */}
                                 <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl">
-                                    <div className="flex items-center gap-4 mb-6 border-b border-slate-700 pb-4"><div className="p-3 bg-blue-500/20 rounded-xl text-blue-400 flex justify-center items-center"><Icons.Globe/></div><div><h2 className="text-2xl font-bold text-white uppercase tracking-widest">Sincronización Cloud</h2></div></div>
+                                    <div className="flex items-center gap-4 mb-6 border-b border-slate-700 pb-4"><div className="p-3 bg-blue-500/20 rounded-xl text-blue-400 flex justify-center items-center"><Icons.Globe/></div><div><h2 className="text-2xl font-bold text-white uppercase tracking-widest">Sincronización Cloud</h2><p className="text-slate-400 text-sm">Persistencia en Drive</p></div></div>
                                     <div className="flex items-end gap-2 mb-6">
                                         <div className="flex-1"><label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">URL del Script de GDrive</label>
-                                        <input type="password" value={simpleDecrypt(gScriptUrl)} onChange={e=>setGScriptUrl(simpleEncrypt(e.target.value))} onBlur={()=>uploadToCloud(true)} className="w-full bg-black/50 border border-slate-700 rounded-xl p-4 font-mono text-xs text-white outline-none focus:border-blue-500"/></div>
+                                        <div className="relative">
+                                            <input type={showUrl ? "text" : "password"} value={simpleDecrypt(gScriptUrl)} onChange={e=>{setGScriptUrl(simpleEncrypt(e.target.value));}} onBlur={()=>uploadToCloud(true)} placeholder="https://script.google.com/..." className="w-full bg-black/50 border border-slate-700 rounded-xl p-4 font-mono text-xs text-white focus:outline-none focus:border-blue-500"/>
+                                            <button onClick={()=>setShowUrl(!showUrl)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">{showUrl ? <Icons.EyeOff/> : <Icons.Eye/>}</button>
+                                        </div></div>
                                         <button onClick={()=>uploadToCloud(false)} className="bg-blue-600 hover:bg-blue-500 p-4 rounded-xl shadow-lg transition-all text-white border border-blue-500"><Icons.Refresh/></button>
                                     </div>
-                                    <div className="bg-slate-950/80 border border-slate-700 rounded-2xl p-6 text-[11px] text-slate-300 space-y-4 leading-relaxed">
-                                        <h5 className="text-xs font-bold text-white mb-4 flex items-center gap-2 uppercase tracking-widest"><Icons.Settings/> Protocolo Persistencia</h5>
-                                        <p>Para habilitar el guardado automático en su Google Drive personal, debe desplegar el script proporcionado en la documentación técnica de BoardingGate.</p>
+                                    <div className="bg-slate-950/80 border border-slate-700 rounded-2xl p-6">
+                                        <h5 className="text-xs font-bold text-white mb-4 flex items-center gap-2"><Icons.Settings/> Tutorial de Configuración</h5>
+                                        <ol className="list-decimal list-inside text-[11px] text-slate-300 space-y-4 leading-relaxed">
+                                            <li>Ve a <a href="https://script.google.com/home" target="_blank" className="text-blue-400 font-bold underline">Google Apps Script</a> y haz clic en <strong>"Nuevo Proyecto"</strong>.</li>
+                                            <li>Pega este código exacto:
+<pre className="bg-black text-green-400 p-4 rounded-xl mt-3 border border-slate-800 overflow-x-auto text-[10px] font-mono leading-relaxed select-all shadow-inner">
+{`function A_AUTORIZAR_AQUI() { DriveApp.getFiles(); UrlFetchApp.fetch("https://www.google.com"); }
+function doPost(e) {
+  var lock = LockService.getScriptLock(); lock.tryLock(10000);
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var fileName = "BG_AGENTS_DB.json";
+    var files = DriveApp.getFilesByName(fileName);
+    var file = files.hasNext() ? files.next() : DriveApp.createFile(fileName, "{}", MimeType.PLAIN_TEXT);
+    var backupFiles = DriveApp.getFilesByName(fileName + ".bak");
+    var backupFile = backupFiles.hasNext() ? backupFiles.next() : DriveApp.createFile(fileName + ".bak", "", MimeType.PLAIN_TEXT);
+    backupFile.setContent(file.getBlob().getDataAsString());
+    file.setContent(JSON.stringify(data));
+    return ContentService.createTextOutput(JSON.stringify({status:"success", ts: data.timestamp})).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) { return ContentService.createTextOutput(JSON.stringify({status:"error"})); } 
+  finally { lock.releaseLock(); }
+}
+function doGet(e) {
+  var target = e.parameter.restoreBak === "true" ? "BG_AGENTS_DB.json.bak" : "BG_AGENTS_DB.json";
+  var files = DriveApp.getFilesByName(target);
+  if (files.hasNext()) return ContentService.createTextOutput(files.next().getBlob().getDataAsString()).setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify({timestamp:0})).setMimeType(ContentService.MimeType.JSON);
+}`}
+</pre>
+                                            </li>
+                                            <li className="text-blue-400 font-bold uppercase">IMPORTANTE: Ejecuta "A_AUTORIZAR_AQUI" primero pulsando ▶ Ejecutar.</li>
+                                            <li>Pulsa <strong>Implementar > Nueva implementación > Aplicación web</strong>. Pon "Quién tiene acceso: Cualquier usuario".</li>
+                                        </ol>
+                                    </div>
+                                </div>
+
+                                {/* PIN Y BACKUP EXACTO BOLSA */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-xl border-t-2 border-t-red-600">
+                                        <h3 className="text-xs font-black text-red-500 uppercase mb-4 tracking-widest flex items-center gap-2"><Icons.EyeOff/> Seguridad PIN</h3>
+                                        <input type="password" value={appPin} onChange={e=>{setAppPin(e.target.value.replace(/\D/g,'').slice(0,4)); uploadToCloud(true);}} placeholder="PIN 4 DIGITOS" className="w-full bg-black border border-slate-700 text-center text-3xl font-mono p-4 rounded-xl text-white outline-none focus:border-red-500 transition-colors" />
+                                    </div>
+                                    <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-xl flex flex-col justify-between gap-4 border-t-2 border-t-blue-600">
+                                        <h3 className="text-xs font-black text-blue-500 uppercase tracking-widest flex items-center gap-2"><Icons.Upload/> Backup</h3>
+                                        <div className="space-y-3">
+                                            <button onClick={handleExportBackup} className="w-full bg-slate-800 hover:bg-slate-700 py-3 rounded-xl font-black text-[10px] uppercase border border-slate-700 transition-all text-white">Exportar</button>
+                                            <label className="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-black text-[10px] uppercase text-center cursor-pointer text-white block transition-all">Importar<input type="file" className="hidden" onChange={handleImportBackup}/></label>
+                                            <button onClick={()=>{}} className="w-full bg-indigo-600 hover:bg-indigo-500 border border-indigo-500 py-3 rounded-xl font-black text-[10px] uppercase text-center text-white flex items-center justify-center gap-2 transition-all"><Icons.Refresh/> Restaurar (.bak)</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* ESTADO SISTEMA EXACTO BOLSA */}
+                                <div className="bg-slate-900 p-10 rounded-3xl border border-slate-800 shadow-2xl border-l-4 border-l-green-500">
+                                    <h2 className="text-xl font-bold mb-6 uppercase tracking-widest text-white">Entorno</h2>
+                                    <div className="bg-black/40 p-6 rounded-2xl border border-slate-700">
+                                        <label className="block text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">Hash de Instalación</label>
+                                        <div className="flex gap-3">
+                                            <input type="text" id="licInputHash" placeholder="XXXX-XXXX" className="flex-1 bg-slate-900 border border-slate-700 p-3 font-mono text-white uppercase outline-none focus:border-green-500" />
+                                            <button onClick={()=>{const v=document.getElementById('licInputHash').value; if(_0x8f(v)){_s_set(_0xT); uploadToCloud(true); alert("VALIDADO");}else{alert("ERROR");}}} className="bg-blue-600 px-8 rounded-xl font-black text-xs uppercase hover:bg-blue-500 transition-all text-white shadow-lg">Verificar</button>
+                                        </div>
+                                        {_0xAuth && <div className="mt-4 text-green-400 text-[10px] font-black tracking-widest animate-pulse flex items-center gap-2 uppercase"><Icons.CheckCircle/> Sistema Activo</div>}
                                     </div>
                                 </div>
 
