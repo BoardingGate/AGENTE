@@ -133,7 +133,7 @@
             const [availableModels, setAvailableModels] = usePersistentState('bg_ag_models_list', DEFAULT_AI_MODELS);
             const [appPin, setAppPin] = usePersistentState('bg_ag_pin', '');
             const [_s_st, _s_set] = usePersistentState(_0xL, '');
-            const [localTimestamp, setLocalTimestamp] = usePersistentState('bg_ag_ts', Date.now());
+            const [localTimestamp, setLocalTimestamp] = usePersistentState('bg_ag_ts', 0);
             
             // --- DATOS APP ---
             const [agents, setAgents] = usePersistentState('bg_ag_agents_data', [{id: 1, nombre: 'Analista Senior', instrucciones: 'Eres un analista CFA.'}]);
@@ -257,18 +257,26 @@
             }, [agents, templates, peticionHistory, apiKey, aiModel, availableModels, appPin, _s_st, gScriptUrl]);
 
             const downloadFromCloud = async () => {
-                const url = simpleDecrypt(gScriptUrl); if (!url) return;
+                const url = simpleDecrypt(gScriptUrl); 
+                if (!url) return;
                 try {
-                    const resp = await fetch(url); const data = await resp.json();
-                    if (data.timestamp > localTimestamp) {
-                        if(data.agents) setAgents(data.agents); if(data.templates) setTemplates(data.templates);
+                    const resp = await fetch(url); 
+                    const data = await resp.json();
+                    // Si el timestamp de la nube es mayor o el historial local está vacío, actualizamos
+                    if (data.timestamp > localTimestamp || (data.peticionHistory && peticionHistory.length === 0)) {
+                        if(data.agents) setAgents(data.agents); 
+                        if(data.templates) setTemplates(data.templates);
                         if(data.peticionHistory) setPeticionHistory(data.peticionHistory);
-                        if(data.apiKey) setApiKey(data.apiKey); if(data.appPin) setAppPin(data.appPin);
-                        setLocalTimestamp(data.timestamp);
+                        if(data.apiKey) setApiKey(data.apiKey); 
+                        if(data.appPin) setAppPin(data.appPin);
+                        if(data.aiModel) setAiModel(data.aiModel);
+                        if(data.availableModels) setAvailableModels(data.availableModels);
+                        setLocalTimestamp(data.timestamp || Date.now());
                     }
-                } catch (e) { }
+                } catch (e) { console.error("Error en sincronización:", e); }
             };
 
+            
             const testConnection = async () => {
                 if(!apiKey) return alert("Introduce clave.");
                 setTestStatus('loading');
