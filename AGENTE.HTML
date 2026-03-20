@@ -19,6 +19,7 @@
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
         html, body { margin: 0; padding: 0; width: 100%; height: 100dvh; overflow: auto; background-color: #0a0a0a; font-family: 'Inter', sans-serif; color: #e5e5e5; }
@@ -77,7 +78,7 @@
 
         const Icons = {
             Brain: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-1.48Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-1.48Z"/></svg>,
-            Settings: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+            Settings: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
             Users: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
             FileText: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>,
             Upload: (p) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18" {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
@@ -203,39 +204,57 @@
                     let contextDoc = "";
                     for(const f of archivos) contextDoc += `\n- ARCHIVO ADJUNTO: ${f.name}\n${await extractTextFromFile(f)}\n`;
                     
-                    const securityPrompt = `HOY ES: ${hoy}. PETICIÓN: "${peticion}". Agentes: ${JSON.stringify(agents.map(a=>a.nombre))}. Formatos: ${JSON.stringify(templates.map(t=>t.nombre))}. 
-                    Analiza si faltan datos para una respuesta experta. 
-                    JSON: {"valid":boolean, "error_msg":"string", "agente":"nombre", "plantilla":"nombre", "internet":boolean, "query":"string"}`;
+                    const planningPrompt = `HOY ES: ${hoy}. PETICIÓN: "${peticion}". 
+                    Agentes disponibles: ${JSON.stringify(agents.map(a=>a.nombre))}. 
+                    Plantillas disponibles: ${JSON.stringify(templates.map(t=>t.nombre))}. 
+                    Analiza la misión y decide qué especialistas (máximo 5) deben colaborar para un resultado óptimo.
+                    RESPONDE SOLO CON ESTE JSON: {"valid":boolean, "error_msg":"string", "selected_agents":["nombre1", "nombre2"], "plantilla":"nombre", "internet":boolean, "query":"string"}`;
                     
-                    const securityRes = await callGemini(securityPrompt, aiModel);
-                    const decision = JSON.parse(securityRes.match(/\{[\s\S]*\}/)[0]);
+                    const planningRes = await callGemini(planningPrompt, aiModel);
+                    const decision = JSON.parse(planningRes.match(/\{[\s\S]*\}/)[0]);
                     
                     if (!decision.valid) {
                         setResultado(`<div class="bg-red-900/20 border border-red-500 p-8 rounded-3xl text-red-400 font-bold uppercase text-center">${decision.error_msg}</div>`);
                         setLoading(false); return;
                     }
 
-                    let internet = "";
+                    let internetData = "";
                     if(decision.internet) {
                         setStatusMsg(`Mejora Activa: Consultando red global (${hoy})...`);
-                        internet = await callGemini(`DATOS REALES Y ACTUALIZADOS A FECHA ${hoy} SOBRE: ${decision.query}`, aiModel, true);
+                        internetData = await callGemini(`DATOS REALES Y ACTUALIZADOS A FECHA ${hoy} SOBRE: ${decision.query}`, aiModel, true);
                     }
 
-                    const ag = agents.find(a=>a.nombre===decision.agente) || agents[0];
-                    const tp = templates.find(t=>t.nombre===decision.plantilla) || templates[0];
-                    setInfoOrquestador({ agentes: ag.nombre, plantilla: tp.nombre, internet: decision.internet ? 'Sí' : 'No' });
+                    // --- EJECUCIÓN ENJAMBRE (SWARM) ---
+                    let swarmContributions = "";
+                    for (const agName of decision.selected_agents.slice(0, 5)) {
+                        const ag = agents.find(a => a.nombre === agName) || agents[0];
+                        setStatusMsg(`Agente [${ag.nombre}] analizando...`);
+                        const agentPrompt = `
+                            CONOCIMIENTO ACTUAL RED: ${internetData}
+                            DOCUMENTOS EXTRA: ${contextDoc}
+                            PETICION: ${peticion}
+                            TU ROL: ${ag.instrucciones}
+                            Tarea: Basándote en tu rol, proporciona una aportación técnica y experta para resolver la misión. 
+                            Respuesta directa, técnica y sin introducciones.`;
+                        const contribution = await callGemini(agentPrompt, aiModel);
+                        swarmContributions += `\n--- APORTACIÓN DE ${ag.nombre} ---\n${contribution}\n`;
+                    }
 
-                    setStatusMsg("Generando informe...");
+                    const tp = templates.find(t=>t.nombre===decision.plantilla) || templates[0];
+                    setInfoOrquestador({ agentes: decision.selected_agents.join(", "), plantilla: tp.nombre, internet: decision.internet ? 'Sí' : 'No' });
+
+                    setStatusMsg("Consolidando Enjambre...");
                     const finalPrompt = `
                     FECHA ACTUAL: ${hoy}.
-                    ROL: ${ag.instrucciones}. 
-                    FORMATO: ${tp.descripcion}. 
-                    INTERNET (DATOS ACTUALES): ${internet}. 
-                    DOCUMENTOS: ${contextDoc}. 
-                    PETICION: ${peticion}. 
-                    REGLA 1: PRIORIZA LOS DATOS DE INTERNET Y DOCUMENTOS SOBRE TU ENTRENAMIENTO.
-                    REGLA 2: COMIENZA DIRECTAMENTE EL INFORME. PROHIBIDAS INTRODUCCIONES, PRELIMINARES O DESPEDIDAS.
-                    REGLA 3: SIN ALUCINACIONES. SALIDA HTML SEMÁNTICO.`;
+                    FORMATO REQUERIDO: ${tp.descripcion}.
+                    EJEMPLO ESTRUCTURA: ${tp.ejemplo || ''}
+                    APORTACIONES DE ESPECIALISTAS: ${swarmContributions}. 
+                    PETICION ORIGINAL: ${peticion}.
+                    
+                    INSTRUCCIONES FINALES: Unifica todas las aportaciones de los especialistas en un informe coherente siguiendo el formato indicado.
+                    REGLA 1: PRIORIZA LOS DATOS TÉCNICOS APORTADOS POR EL ENJAMBRE.
+                    REGLA 2: COMIENZA DIRECTAMENTE EL INFORME. PROHIBIDAS INTRODUCCIONES.
+                    REGLA 3: SALIDA HTML SEMÁNTICO COMPLETO.`;
                     
                     const res = await callGemini(finalPrompt, aiModel);
                     setResultado(res.replace(/```html/g, '').replace(/```/g, '').trim());
@@ -262,7 +281,6 @@
                 try {
                     const resp = await fetch(url); 
                     const data = await resp.json();
-                    // Si el timestamp de la nube es mayor o el historial local está vacío, actualizamos
                     if (data.timestamp > localTimestamp || (data.peticionHistory && peticionHistory.length === 0)) {
                         if(data.agents) setAgents(data.agents); 
                         if(data.templates) setTemplates(data.templates);
@@ -276,7 +294,6 @@
                 } catch (e) { console.error("Error en sincronización:", e); }
             };
 
-            
             const testConnection = async () => {
                 if(!apiKey) return alert("Introduce clave.");
                 setTestStatus('loading');
@@ -306,8 +323,6 @@
             const exportPDF=()=>{const e=document.querySelector('.ai-output-container');const o={margin:1,filename:'Informe_BG.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'in',format:'letter',orientation:'portrait'}};html2pdf().set(o).from(e).save();};
             const exportExcel=()=>{const e=document.querySelector('.ai-output-container');const ws=XLSX.utils.table_to_sheet(e.querySelector('table')||XLSX.utils.aoa_to_sheet([[e.innerText]]));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Informe");XLSX.writeFile(wb,"Informe_BG.xlsx");};
             const exportWord=()=>{const e=document.querySelector('.ai-output-container').innerHTML;const b=new Blob(['<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>',e,'</body></html>'],{type:'application/msword'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='Informe_BG.doc';a.click();};
-
-
 
             useEffect(() => { downloadFromCloud(); }, []);
 
@@ -385,7 +400,7 @@
                                 {resultado && (
                                     <div className="glass-panel p-10 rounded-3xl border-l-4 border-l-blue-500 fade-in shadow-2xl relative bg-slate-900">
                                         <div className="flex flex-wrap justify-between items-center border-b border-slate-700 pb-4 mb-6 gap-2">
-                                            <div className="text-[9px] font-bold text-slate-500 uppercase">Agente: <span className="text-purple-400">{infoOrquestador?.agentes}</span> | Red: <span className="text-blue-400">{infoOrquestador?.internet}</span></div>
+                                            <div className="text-[9px] font-bold text-slate-500 uppercase">Enjambre: <span className="text-purple-400">{infoOrquestador?.agentes}</span> | Red: <span className="text-blue-400">{infoOrquestador?.internet}</span></div>
                                                 <div className="flex flex-wrap gap-2">
                                                     <button onClick={()=>navigator.clipboard.writeText(resultado.replace(/<[^>]*>/g,''))} className="text-[8px] font-black bg-slate-800 hover:bg-slate-700 px-2 py-1.5 rounded border border-slate-700 uppercase">Copia</button>
                                                     <button onClick={exportPDF} className="text-[8px] font-black bg-red-900/30 hover:bg-red-900/50 text-red-400 px-2 py-1.5 rounded border border-red-500/30 uppercase">PDF</button>
@@ -393,7 +408,6 @@
                                                     <button onClick={exportWord} className="text-[8px] font-black bg-blue-900/30 hover:bg-blue-900/50 text-blue-400 px-2 py-1.5 rounded border border-blue-500/30 uppercase">Word</button>
                                                     <button onClick={()=>window.print()} className="text-[8px] font-black bg-purple-900/30 hover:bg-purple-900/50 text-purple-400 px-2 py-1.5 rounded border border-purple-500/30 uppercase">Imprimir</button>
                                                 </div>                                            
-
                                         </div>
                                         <div className="ai-output-container" dangerouslySetInnerHTML={{ __html: resultado }}></div>
                                     </div>
@@ -451,7 +465,6 @@
 
                         {activeTab === 'settings' && (
                             <div className="max-w-2xl mx-auto space-y-8 fade-in pb-10">
-                                {/* CONFIG IA EXACTO BOLSA */}
                                 <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl">
                                     <div className="flex items-center gap-4 mb-6 border-b border-slate-700 pb-4"><div className="p-3 bg-purple-500/20 rounded-xl text-purple-400 flex items-center justify-center"><Icons.Brain/></div><div><h2 className="text-2xl font-bold text-white uppercase tracking-widest">IA Protocol</h2></div></div>
                                     <label className="block text-sm font-bold text-slate-300 mb-2">API Key de Gemini</label>
@@ -464,7 +477,6 @@
                                     <div className="mt-8 p-6 bg-[#1e293b] border border-[#334155] rounded-2xl"><h4 className="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2"><Icons.AlertCircle/> Manual API</h4><div className="mb-6 border-b border-slate-700 pb-6"><h5 className="text-sm font-bold text-white mb-3">Opción Gratuita</h5><ol className="list-decimal list-inside text-xs text-slate-300 space-y-2 mb-4 leading-relaxed"><li>Accede a <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-blue-400 font-bold underline">Google AI Studio</a>.</li><li>Pulsa en <strong>"Get API key"</strong> y luego en <strong>"Create API Key"</strong>.</li><li>Copia la clave y pégala arriba.</li></ol></div><h5 className="text-sm font-bold text-white mb-3">Opción de Pago</h5><p className="text-xs text-slate-300">Asocia tarjeta en "Billing" de AI Studio. El coste es ínfimo y sin límites.</p></div>
                                 </div>
 
-                                {/* SYNC GDRIVE EXACTO BOLSA */}
                                 <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl">
                                     <div className="flex items-center gap-4 mb-6 border-b border-slate-700 pb-4"><div className="p-3 bg-blue-500/20 rounded-xl text-blue-400 flex justify-center items-center"><Icons.Globe/></div><div><h2 className="text-2xl font-bold text-white uppercase tracking-widest">Sincronización Cloud</h2><p className="text-slate-400 text-sm">Persistencia en Drive</p></div></div>
                                     <div className="flex items-end gap-2 mb-6">
@@ -478,54 +490,13 @@
                                     <div className="bg-slate-950/80 border border-slate-700 rounded-2xl p-6">
                                         <h5 className="text-xs font-bold text-white mb-4 flex items-center gap-2"><Icons.Settings/> Tutorial de Configuración</h5>
                                         <ol className="list-decimal list-inside text-[11px] text-slate-300 space-y-4 leading-relaxed">
-                                            <li>Ve a <a href="https://script.google.com/home" target="_blank" className="text-blue-400 font-bold underline">Google Apps Script</a> y haz clic en <strong>"Nuevo Proyecto"</strong>.</li>
-                                            <li>Pega este código exacto:
-<pre className="bg-black text-green-400 p-4 rounded-xl mt-3 border border-slate-800 overflow-x-auto text-[10px] font-mono leading-relaxed select-all shadow-inner">
-{`function A_AUTORIZAR_AQUI() { DriveApp.getFiles(); UrlFetchApp.fetch("https://www.google.com"); }
-
-function doPost(e) {
-  var lock = LockService.getScriptLock();
-  lock.tryLock(10000);
-  try {
-    var data = JSON.parse(e.postData.contents);
-    var fileName = "BG_AGENTS_DB.json";
-    var files = DriveApp.getFilesByName(fileName);
-    var file = files.hasNext() ? files.next() : DriveApp.createFile(fileName, "{}", MimeType.PLAIN_TEXT);
-    
-    // Crear/Actualizar Backup antes de guardar lo nuevo
-    var backupName = fileName + ".bak";
-    var backups = DriveApp.getFilesByName(backupName);
-    var backupFile = backups.hasNext() ? backups.next() : DriveApp.createFile(backupName, "", MimeType.PLAIN_TEXT);
-    backupFile.setContent(file.getBlob().getDataAsString());
-    
-    // Guardar datos actuales
-    file.setContent(JSON.stringify(data));
-    return ContentService.createTextOutput(JSON.stringify({status:"success", ts: data.timestamp})).setMimeType(ContentService.MimeType.JSON);
-  } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({status:"error", msg: err.toString()})).setMimeType(ContentService.MimeType.JSON);
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-function doGet(e) {
-  var isRestore = e.parameter.restoreBak === "true";
-  var fileName = isRestore ? "BG_AGENTS_DB.json.bak" : "BG_AGENTS_DB.json";
-  var files = DriveApp.getFilesByName(fileName);
-  if (files.hasNext()) {
-    return ContentService.createTextOutput(files.next().getBlob().getDataAsString()).setMimeType(ContentService.MimeType.JSON);
-  }
-  return ContentService.createTextOutput(JSON.stringify({timestamp:0})).setMimeType(ContentService.MimeType.JSON);
-}`}
-</pre>
-                                            </li>
+                                            <li>Ve a Google Apps Script y haz clic en "Nuevo Proyecto". Pega el código que ya tienes configurado en tu Script de Google.</li>
                                             <li className="text-blue-400 font-bold uppercase">IMPORTANTE: Ejecuta "A_AUTORIZAR_AQUI" primero pulsando ▶ Ejecutar.</li>
-                                            <li>Pulsa <strong>Implementar > Nueva implementación > En la rueda, selecciona Aplicación web</strong>. Pon "Quién tiene acceso: Cualquier usuario y aceptar. Copia la URL que genera y pégala aquí en URL DEL SCRIPT DE GOOGLE.</li>
+                                            <li>Pulsa Implementar > Nueva implementación > Aplicación web. Quién tiene acceso: Cualquier usuario. Copia la URL que genera y pégala aquí.</li>
                                         </ol>
                                     </div>
                                 </div>
 
-                                {/* PIN Y BACKUP EXACTO BOLSA */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-xl border-t-2 border-t-red-600">
                                         <h3 className="text-xs font-black text-red-500 uppercase mb-4 tracking-widest flex items-center gap-2"><Icons.EyeOff/> Seguridad PIN</h3>
@@ -541,7 +512,6 @@ function doGet(e) {
                                     </div>
                                 </div>
 
-                                {/* ESTADO SISTEMA EXACTO BOLSA */}
                                 <div className="bg-slate-900 p-10 rounded-3xl border border-slate-800 shadow-2xl border-l-4 border-l-green-500">
                                     <h2 className="text-xl font-bold mb-6 uppercase tracking-widest text-white">Entorno</h2>
                                     <div className="bg-black/40 p-6 rounded-2xl border border-slate-700">
@@ -554,7 +524,6 @@ function doGet(e) {
                                     </div>
                                 </div>
 
-                                {/* PIE EXACTO BOLSA */}
                                 <div className="text-center bg-slate-800/50 p-6 rounded-2xl max-w-2xl w-full mb-10 mx-auto border border-slate-700 shadow-inner">
                                     <p className="text-xs text-slate-400 mb-4 leading-relaxed">Esta plataforma es un proyecto independiente sustentado exclusivamente mediante <strong className="text-slate-300">crowdfunding</strong> y las aportaciones directas de sus usuarios.</p>
                                     <p className="text-xs text-slate-400 mb-3 border-t border-slate-700 pt-5 font-bold uppercase tracking-widest">Colabora con el proyecto:</p>
@@ -565,7 +534,7 @@ function doGet(e) {
                     </main>
 
                     <footer className="shrink-0 bg-slate-900 border-t border-slate-800 py-1.5 px-6 flex justify-between items-center text-[8px] text-slate-500 font-bold uppercase tracking-[0.2em]">
-                        <div>BoardingGate Agent v2.6 (Cybernetic Orchestrator)</div>
+                        <div>BoardingGate Agent v2.7 (Swarm Orchestrator)</div>
                         <div className="flex gap-6">
                             <span>Sincronización: {syncStatus==='synced'?'Drive OK':'Local'}</span>
                             <span>Licencia: {_0xAuth?'ACTIVA':'RESTRINGIDA'}</span>
