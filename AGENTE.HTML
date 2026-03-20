@@ -240,7 +240,7 @@
                     const res = await callGemini(finalPrompt, aiModel);
                     setResultado(res.replace(/```html/g, '').replace(/```/g, '').trim());
                     
-                    setPeticionHistory(prev => [{id: Date.now(), texto: peticion, desc: peticion.substring(0,60)+'...'}, ...prev].slice(0, 20));
+                    setPeticionHistory(p=>[{id:Date.now(),texto:peticion,desc:'['+new Date().toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+'] '+peticion.substring(0,60)+'...'},...p].slice(0,20));
                     uploadToCloud(true);
                 } catch(e) { alert(e.message); } finally { setLoading(false); setStatusMsg(''); }
             };
@@ -472,25 +472,39 @@
                                             <li>Pega este código exacto:
 <pre className="bg-black text-green-400 p-4 rounded-xl mt-3 border border-slate-800 overflow-x-auto text-[10px] font-mono leading-relaxed select-all shadow-inner">
 {`function A_AUTORIZAR_AQUI() { DriveApp.getFiles(); UrlFetchApp.fetch("https://www.google.com"); }
+
 function doPost(e) {
-  var lock = LockService.getScriptLock(); lock.tryLock(10000);
+  var lock = LockService.getScriptLock();
+  lock.tryLock(10000);
   try {
     var data = JSON.parse(e.postData.contents);
     var fileName = "BG_AGENTS_DB.json";
     var files = DriveApp.getFilesByName(fileName);
     var file = files.hasNext() ? files.next() : DriveApp.createFile(fileName, "{}", MimeType.PLAIN_TEXT);
-    var backupFiles = DriveApp.getFilesByName(fileName + ".bak");
-    var backupFile = backupFiles.hasNext() ? backupFiles.next() : DriveApp.createFile(fileName + ".bak", "", MimeType.PLAIN_TEXT);
+    
+    // Crear/Actualizar Backup antes de guardar lo nuevo
+    var backupName = fileName + ".bak";
+    var backups = DriveApp.getFilesByName(backupName);
+    var backupFile = backups.hasNext() ? backups.next() : DriveApp.createFile(backupName, "", MimeType.PLAIN_TEXT);
     backupFile.setContent(file.getBlob().getDataAsString());
+    
+    // Guardar datos actuales
     file.setContent(JSON.stringify(data));
     return ContentService.createTextOutput(JSON.stringify({status:"success", ts: data.timestamp})).setMimeType(ContentService.MimeType.JSON);
-  } catch(err) { return ContentService.createTextOutput(JSON.stringify({status:"error"})); } 
-  finally { lock.releaseLock(); }
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({status:"error", msg: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
+  }
 }
+
 function doGet(e) {
-  var target = e.parameter.restoreBak === "true" ? "BG_AGENTS_DB.json.bak" : "BG_AGENTS_DB.json";
-  var files = DriveApp.getFilesByName(target);
-  if (files.hasNext()) return ContentService.createTextOutput(files.next().getBlob().getDataAsString()).setMimeType(ContentService.MimeType.JSON);
+  var isRestore = e.parameter.restoreBak === "true";
+  var fileName = isRestore ? "BG_AGENTS_DB.json.bak" : "BG_AGENTS_DB.json";
+  var files = DriveApp.getFilesByName(fileName);
+  if (files.hasNext()) {
+    return ContentService.createTextOutput(files.next().getBlob().getDataAsString()).setMimeType(ContentService.MimeType.JSON);
+  }
   return ContentService.createTextOutput(JSON.stringify({timestamp:0})).setMimeType(ContentService.MimeType.JSON);
 }`}
 </pre>
@@ -512,7 +526,7 @@ function doGet(e) {
                                         <div className="space-y-3">
                                             <button onClick={handleExportBackup} className="w-full bg-slate-800 hover:bg-slate-700 py-3 rounded-xl font-black text-[10px] uppercase border border-slate-700 transition-all text-white">Exportar</button>
                                             <label className="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-black text-[10px] uppercase text-center cursor-pointer text-white block transition-all">Importar<input type="file" className="hidden" onChange={handleImportBackup}/></label>
-                                            <button onClick={()=>{}} className="w-full bg-indigo-600 hover:bg-indigo-500 border border-indigo-500 py-3 rounded-xl font-black text-[10px] uppercase text-center text-white flex items-center justify-center gap-2 transition-all"><Icons.Refresh/> Restaurar (.bak)</button>
+                                            <button onClick={async()=>{const u=simpleDecrypt(gScriptUrl);if(!u)return alert("Configura URL de Script");setLoading(true);try{const r=await fetch(u+(u.includes('?')?'&':'?')+'restoreBak=true');const d=await r.json();if(d.agents){setAgents(d.agents);setTemplates(d.templates);setPeticionHistory(d.peticionHistory||[]);setApiKey(d.apiKey);setAppPin(d.appPin);setAiModel(d.aiModel);setAvailableModels(d.availableModels);setLocalTimestamp(d.timestamp);alert("Backup .bak restaurado con éxito");}else{alert("No se encontró archivo .bak");}}catch(e){alert("Error de conexión");}finally{setLoading(false);}}} className="w-full bg-indigo-600 hover:bg-indigo-500 border border-indigo-500 py-3 rounded-xl font-black text-[10px] uppercase text-center text-white flex items-center justify-center gap-2 transition-all"><Icons.Refresh/> Restaurar (.bak)</button>
                                         </div>
                                     </div>
                                 </div>
