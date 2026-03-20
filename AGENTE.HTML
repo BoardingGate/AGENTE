@@ -357,15 +357,44 @@
                                             <h3 className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 tracking-widest"><Icons.History/> Misiones Recientes</h3>
                                             <div className="relative w-full md:w-64"><Icons.Search className="absolute left-3 top-2.5 text-slate-600" size={14}/><input type="text" value={searchHistory} onChange={e=>setSearchHistory(e.target.value)} placeholder="BUSCAR EN HISTORIAL..." className="w-full pl-10 text-[9px] uppercase font-black py-2 bg-black/40 border-slate-800"/></div>
                                         </div>
+
                                         <div className="space-y-1">
-                                            {peticionHistory.filter(h => h.texto.toLowerCase().includes(searchHistory.toLowerCase())).map(h => (
-                                                <div key={h.id} onClick={()=>setPeticion(h.texto)} className="bg-black/30 hover:bg-slate-800 p-2.5 rounded-xl text-xs cursor-pointer border border-slate-800 transition-all flex justify-between items-center group">
-                                                    <span className="truncate pr-4 text-slate-400 group-hover:text-blue-400">{h.desc}</span>
-                                                    <Icons.Plus size={12} className="text-slate-700 group-hover:text-blue-500"/>
-                                                </div>
+                                            {peticionHistory
+                                                .filter(h => h.texto.toLowerCase().includes(searchHistory.toLowerCase()))
+                                                .map(h => (
+                                                    <div key={h.id} className="bg-black/30 hover:bg-slate-800 p-2.5 rounded-xl text-xs border border-slate-800 transition-all flex justify-between items-center group">
+                                                        {/* Click en el texto para reutilizar */}
+                                                        <div onClick={() => setPeticion(h.texto)} className="flex-1 truncate cursor-pointer pr-4 text-slate-400 group-hover:text-blue-400">
+                                                            <span className="font-mono text-[10px] text-slate-600 mr-2">[{new Date(h.id).toLocaleDateString()}]</span>
+                                                            {h.desc}
+                                                        </div>
+                                                        
+                                                        <div className="flex items-center gap-3">
+                                                            {/* Botón Cargar */}
+                                                            <button onClick={() => setPeticion(h.texto)} className="text-slate-700 hover:text-blue-500 transition-colors" title="Cargar">
+                                                                <Icons.Plus size={14}/>
+                                                            </button>
+                                                            
+                                                            {/* Botón Borrar Individual */}
+                                                            <button 
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation(); // Evita que se cargue la petición al borrar
+                                                                    if(confirm("¿Eliminar esta misión del historial?")) {
+                                                                        setPeticionHistory(prev => prev.filter(item => item.id !== h.id));
+                                                                        setTimeout(() => uploadToCloud(true), 200);
+                                                                    }
+                                                                }} 
+                                                                className="text-slate-700 hover:text-red-500 transition-colors p-1"
+                                                                title="Eliminar del historial"
+                                                            >
+                                                                <Icons.Trash size={14}/>
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                             ))}
                                         </div>
-                                    </div>
+
+                                     </div>
                                 )}
 
                                 {resultado && (
