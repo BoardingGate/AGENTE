@@ -5,19 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>BoardingGate - Multi Agente iA</title>
     
-    <!-- Depuración Eruda (Flotante) -->
+    <!-- Depuración Eruda -->
     <script src="//cdn.jsdelivr.net/npm/eruda"></script>
     <script>eruda.init();</script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     
-    <!-- Core React & Babel -->
+    <!-- Core React -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Librerías de Procesamiento de Documentos -->
+    <!-- Librerías de Documentos -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
@@ -31,7 +31,7 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #111; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
         .glass-panel { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); }
-        .fade-in { animation: fadeIn 0.4s ease-out; }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         input, select, textarea { background: #1e293b; border: 1px solid #334155; color: white; border-radius: 6px; padding: 8px; transition: all 0.2s; font-size: 14px; }
         input:focus, select:focus, textarea:focus { border-color: #3b82f6; outline: none; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
@@ -45,13 +45,13 @@
         const { useState, useEffect, useMemo, useRef } = React;
         const { createRoot } = ReactDOM;
 
-        // --- CONSTANTES ---
+        // --- CONSTANTES GLOBALES ---
         const DEFAULT_AI_MODELS = [
             "gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite",
             "gemini-3.1-pro-preview", "gemini-3-pro-preview", "gemini-3-flash-preview"
         ];
 
-        // --- SEGURIDAD ---
+        // --- LÓGICA DE SEGURIDAD ---
         const _0xL = '__sys_reg_st'; 
         const _0xT = 'ACTIVATED_V3_SECURE';
         const _0x8f = (k) => { try { const _d = new Date(); const _v = Object.values(new Intl.DateTimeFormat('es').formatToParts(_d)).filter(p => ['day', 'month', 'year'].includes(p.type)).reduce((a, b) => a + parseInt(b.value), 0) * _d.getDate(); return k === _v.toString(16).toUpperCase(); } catch { return false; } };
@@ -64,6 +64,7 @@
             useEffect(() => { window.localStorage.setItem(key, JSON.stringify(state)); }, [key, state]); return [state, setState];
         };
 
+        // --- DICCIONARIO DE ICONOS (COMPLETO Y BLINDADO) ---
         const Icons = {
             Brain: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/><path d="M13 7h-2v2h2V7zm0 4h-2v6h2v-6z"/></svg>,
             Settings: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>,
@@ -72,17 +73,19 @@
             Eye: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>,
             EyeOff: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>,
             ExternalLink: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>,
-            Refresh: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" className={p.className}><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>,
-            Loader: (p) => <svg className="animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="18" height="18"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>,
-            Wand: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M7.5 5.6L10 7 8.6 4.5 10 2 7.5 3.4 5 2l1.4 2.5L5 7zm12 9.8L17 14l1.4 2.5L17 19l2.5-1.4L22 19l-1.4-2.5L22 14zM22 2l-2.5 1.4L17 2l1.4 2.5L17 7l2.5-1.4L22 7l-1.4-2.5zm-7.63 5.29c-.39-.39-1.02-.39-1.41 0L1.29 18.96c-.39.39-.39 1.02 0 1.41l2.34 2.34c.39.39 1.02.39 1.41 0L16.7 11.05c.39-.39.39-1.02 0-1.41l-2.33-2.35zm-1.03 5.49l-2.12-2.12 2.44-2.44 2.12 2.12-2.44 2.44z"/></svg>,
+            Refresh: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" className={p.className} {...p}><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>,
+            Loader: (p) => <svg className="animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="18" height="18" {...p}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>,
             CheckCircle: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>,
             AlertCircle: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>,
             Globe: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.09 13.36 4 12.69 4 12s.09-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.34.16-2h4.68c.09.66.16 1.32.16 2s-.07 1.34-.16 2zm1.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.17.64.26 1.31.26 2s-.09 1.36-.26 2h-3.38z"/></svg>,
             Upload: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>,
             Trash: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>,
-            Plus: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            Trash2: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>, // Duplicado de Trash por seguridad
+            Plus: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>,
+            Check: (p) => <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" {...p}><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
         };
 
+        // --- EXTRACCIÓN DOCUMENTOS ---
         const extractTextFromFile = async (file) => {
             const ext = file.name.split('.').pop().toLowerCase();
             try {
@@ -97,12 +100,10 @@
                     }
                     return text;
                 } else if (ext === 'docx') {
-                    const arrayBuffer = await file.arrayBuffer();
-                    const res = await mammoth.extractRawText({ arrayBuffer });
+                    const res = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
                     return res.value;
                 } else if (ext === 'xlsx' || ext === 'xls') {
-                    const arrayBuffer = await file.arrayBuffer();
-                    const wb = XLSX.read(arrayBuffer);
+                    const wb = XLSX.read(await file.arrayBuffer());
                     let text = "";
                     wb.SheetNames.forEach(s => { text += XLSX.utils.sheet_to_txt(wb.Sheets[s]) + "\n"; });
                     return text;
@@ -111,21 +112,24 @@
             return "";
         };
 
+        // --- APP PRINCIPAL ---
         const App = () => {
-            // --- ESTADOS ---
             const [activeTab, setActiveTab] = useState('dashboard');
             
+            // Variables de Configuración (Como en Bolsa)
             const [apiKey, setApiKey] = usePersistentState('bg_ag_api_key', '');
             const [gScriptUrl, setGScriptUrl] = usePersistentState('bg_ag_gs_url', '');
-            const [aiModel, setAiModel] = usePersistentState('bg_ag_model', DEFAULT_AI_MODELS[0]);
+            const [aiModel, setAiModel] = usePersistentState('bg_ag_ai_model', DEFAULT_AI_MODELS[0]);
             const [availableModels, setAvailableModels] = usePersistentState('bg_ag_models_list', DEFAULT_AI_MODELS);
-            const [appPin, setAppPin] = usePersistentState('bg_ag_pin', '');
+            const [appPin, setAppPin] = usePersistentState('bg_ag_app_pin', '');
             const [_s_st, _s_set] = usePersistentState(_0xL, '');
             const [localTimestamp, setLocalTimestamp] = usePersistentState('bg_ag_ts', 0);
             
+            // Variables de Datos Multi-Agente
             const [agents, setAgents] = usePersistentState('bg_ag_agents_data', [{id: 1, nombre: 'Analista Corporativo', instrucciones: 'Eres un analista senior experto en síntesis corporativa y estructuración de datos.'}]);
             const [templates, setTemplates] = usePersistentState('bg_ag_temps_data', [{id: 1, nombre: 'Informe Ejecutivo', descripcion: 'El informe debe estructurarse con: 1. Resumen de 1 párrafo. 2. Puntos Clave en lista. 3. Conclusión final.', ejemplo: ''}]);
             
+            // Estados de Interfaz
             const [isPinLocked, setIsPinLocked] = useState(!!appPin);
             const [enteredPin, setEnteredPin] = useState('');
             const [loading, setLoading] = useState(false);
@@ -135,6 +139,7 @@
             const [showKey, setShowKey] = useState(false);
             const [showUrl, setShowUrl] = useState(false);
             
+            // Estados Pestañas de Trabajo
             const [peticion, setPeticion] = useState('');
             const [archivos, setArchivos] = useState([]);
             const [resultado, setResultado] = useState('');
@@ -143,7 +148,8 @@
 
             const _0xAuth = useMemo(() => _s_st === _0xT, [_s_st]);
 
-            // --- LLAMADA API ---
+            // ================= FUNCIONES CORE =================
+
             const callGemini = async (prompt, model, useSearch = false) => {
                 const body = { contents: [{ parts: [{ text: prompt }] }] };
                 if (useSearch) body.tools = [{ google_search: {} }];
@@ -156,7 +162,6 @@
                 return data.candidates[0].content.parts[0].text;
             };
 
-            // --- FUNCIONES DE AJUSTES ---
             const testConnection = async () => {
                 if(!apiKey) return alert("Por favor, introduce una API Key.");
                 setTestStatus('loading');
@@ -210,7 +215,7 @@
                 const data = { agents, templates, apiKey, aiModel, availableModels, appPin, _s_st, ts: localTimestamp };
                 const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
                 const url = URL.createObjectURL(blob);
-                const a = document.createElement('a'); a.href = url; a.download = `BoardingGate_Backup.json`; a.click();
+                const a = document.createElement('a'); a.href = url; a.download = `BoardingGate_Backup_Agents.json`; a.click();
             };
 
             const handleImport = (e) => {
@@ -252,7 +257,6 @@
                 } catch (e) { alert("Error: " + e.message); setSyncStatus('error'); } 
             };
 
-            // --- LÓGICA DE ORQUESTADOR ---
             const procesarMision = async () => {
                 if(!apiKey) { alert("Configura la API Key primero en Ajustes Avanzados."); return setActiveTab('settings'); }
                 setLoading(true); setResultado('');
@@ -290,7 +294,7 @@
                 return (
                     <div className="h-full flex flex-col items-center justify-center bg-[#0a0a0a] text-white p-4">
                         <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full">
-                            <div className="text-blue-600 mb-6 flex justify-center"><Icons.Brain/></div>
+                            <div className="text-blue-600 mb-6 flex justify-center"><Icons.Brain size={40}/></div>
                             <h2 className="text-2xl font-bold font-['Orbitron'] tracking-widest mb-6">BoardingGate</h2>
                             <input type="password" value={enteredPin} onChange={e => { const val = e.target.value.slice(0,4); setEnteredPin(val); if(val === appPin) setIsPinLocked(false); }} placeholder="PIN" className="w-full bg-black/50 border border-slate-700 rounded-xl p-4 text-center text-3xl font-mono tracking-[1em] text-white focus:outline-none focus:border-blue-500" autoFocus />
                             {enteredPin.length > 0 && enteredPin !== appPin && enteredPin.length === 4 && <p className="text-red-500 text-xs font-bold animate-pulse mt-2">PIN Incorrecto</p>}
@@ -307,11 +311,11 @@
                             <h1 className="text-2xl font-bold font-['Orbitron'] tracking-tighter">Boarding<span className="text-blue-600">Gate</span></h1>
                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em]">Multi-Agente iA</p>
                         </div>
-                        <nav className="flex bg-slate-800 rounded-lg p-1 gap-1 border border-slate-700 overflow-x-auto custom-scrollbar whitespace-nowrap">
-                            <button onClick={() => setActiveTab('dashboard')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase flex items-center gap-2 transition-all ${activeTab === 'dashboard' ? 'active-tab' : 'text-slate-400 hover:text-white'}`}><Icons.Brain/> Consola Dashboard</button>
-                            <button onClick={() => setActiveTab('agentes')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase flex items-center gap-2 transition-all ${activeTab === 'agentes' ? 'active-tab' : 'text-slate-400 hover:text-white'}`}><Icons.Users/> Mis Agentes</button>
-                            <button onClick={() => setActiveTab('plantillas')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase flex items-center gap-2 transition-all ${activeTab === 'plantillas' ? 'active-tab' : 'text-slate-400 hover:text-white'}`}><Icons.FileText/> Modelos Salida</button>
-                            <button onClick={() => setActiveTab('settings')} className={`px-4 py-2 rounded-md text-[10px] font-bold uppercase flex items-center gap-2 transition-all ${activeTab === 'settings' ? 'active-tab' : 'text-slate-400 hover:text-white'}`}><Icons.Settings/> Ajustes Avanzados</button>
+                        <nav className="flex bg-slate-800 rounded-xl p-1 gap-1 border border-slate-700 overflow-x-auto custom-scrollbar whitespace-nowrap">
+                            <button onClick={() => setActiveTab('dashboard')} className={`px-5 py-2.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 transition-all ${activeTab === 'dashboard' ? 'active-tab' : 'text-slate-400 hover:text-white'}`}><Icons.Brain/> Consola Dashboard</button>
+                            <button onClick={() => setActiveTab('agentes')} className={`px-5 py-2.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 transition-all ${activeTab === 'agentes' ? 'active-tab' : 'text-slate-400 hover:text-white'}`}><Icons.Users/> Mis Agentes</button>
+                            <button onClick={() => setActiveTab('plantillas')} className={`px-5 py-2.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 transition-all ${activeTab === 'plantillas' ? 'active-tab' : 'text-slate-400 hover:text-white'}`}><Icons.FileText/> Modelos Salida</button>
+                            <button onClick={() => setActiveTab('settings')} className={`px-5 py-2.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 transition-all ${activeTab === 'settings' ? 'active-tab' : 'text-slate-400 hover:text-white'}`}><Icons.Settings/> Ajustes Avanzados</button>
                         </nav>
                     </header>
 
@@ -359,7 +363,7 @@
                                     <div key={ag.id} className="glass-panel p-6 rounded-2xl space-y-4 shadow-xl border border-white/5">
                                         <input value={ag.nombre} onChange={e=>{const n=[...agents]; n[i].nombre=e.target.value; setAgents(n);}} className="w-full text-blue-400 font-black uppercase text-sm bg-black/40 border-none" />
                                         <textarea value={ag.instrucciones} onChange={e=>{const n=[...agents]; n[i].instrucciones=e.target.value; setAgents(n);}} placeholder="Instrucciones del rol (System Prompt)..." className="w-full h-40 text-xs leading-relaxed" />
-                                        <button onClick={()=>setAgents(agents.filter(x=>x.id!==ag.id))} className="text-red-500 text-[10px] font-black uppercase hover:text-red-400 transition-colors flex items-center gap-1"><Icons.Trash/> Eliminar Agente</button>
+                                        <button onClick={()=>setAgents(agents.filter(x=>x.id!==ag.id))} className="text-red-500 text-[10px] font-black uppercase hover:text-red-400 transition-colors flex items-center gap-1"><Icons.Trash2/> Eliminar Agente</button>
                                     </div>
                                 ))}</div>
                             </div>
@@ -380,9 +384,9 @@
                                                 const txt = await extractTextFromFile(e.target.files[0]);
                                                 const n=[...templates]; n[i].ejemplo=txt.substring(0,8000); setTemplates(n);
                                                 setLoading(false); alert("Estilo de archivo inyectado.");
-                                            }} className="text-[10px] w-full text-slate-500" />
+                                            }} className="text-[10px] w-full text-slate-500 cursor-pointer" />
                                         </div>
-                                        <button onClick={()=>setTemplates(templates.filter(x=>x.id!==t.id))} className="text-red-500 text-[10px] font-black uppercase hover:text-red-400 transition-colors flex items-center gap-1"><Icons.Trash/> Eliminar Modelo</button>
+                                        <button onClick={()=>setTemplates(templates.filter(x=>x.id!==t.id))} className="text-red-500 text-[10px] font-black uppercase hover:text-red-400 transition-colors flex items-center gap-1"><Icons.Trash2/> Eliminar Modelo</button>
                                     </div>
                                 ))}</div>
                             </div>
@@ -396,62 +400,70 @@
                                 <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl">
                                     <div className="flex items-center gap-4 mb-6 border-b border-slate-700 pb-4"><div className="p-3 bg-purple-500/20 rounded-xl text-purple-400 flex items-center justify-center"><Icons.Brain/></div><div><h2 className="text-2xl font-bold text-white">Configuración IA</h2><p className="text-slate-400 text-sm">Motores de Google Gemini</p></div></div>
                                     
-                                    <label className="block text-sm font-bold text-slate-300 mb-2">API Key de Google Gemini</label>
+                                    <label className="block text-sm font-bold text-slate-300 mb-2">Google Gemini API Key</label>
                                     <div className="relative mb-4">
-                                        <input type={showKey ? "text" : "password"} value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="AIzaSy..." className="w-full bg-black/50 border border-slate-600 rounded-xl p-4 font-mono text-white focus:border-purple-500 outline-none"/>
-                                        <button onClick={()=>setShowKey(!showKey)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">{showKey ? <Icons.EyeOff/> : <Icons.Eye/>}</button>
+                                        <input type={showKey ? "text" : "password"} value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="AIzaSy..." className="w-full bg-black/50 border border-slate-600 rounded-xl p-4 pr-12 text-white focus:border-purple-500 focus:outline-none font-mono"/>
+                                        <button onClick={() => setShowKey(!showKey)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">{showKey ? <Icons.EyeOff/> : <Icons.Eye/>}</button>
                                     </div>
-                                    
-                                    <div className="flex justify-end mb-8">
-                                        <button onClick={testConnection} disabled={testStatus==='loading'} className={`px-6 py-2 rounded-xl border font-black text-[10px] uppercase flex items-center gap-2 transition-all ${testStatus==='success'?'bg-green-600 text-white border-green-500':'bg-slate-800 text-slate-400 border-slate-700'}`}>
-                                            {testStatus==='loading'?<Icons.Loader/>:testStatus==='success'?<Icons.CheckCircle/>:'Probar Conexión API'}
+                                    <div className="flex justify-end gap-3 items-center">
+                                        <button onClick={testConnection} className={`h-[40px] px-6 rounded-xl border font-bold text-sm flex items-center gap-2 ${testStatus === 'success' ? 'bg-green-600 border-green-500 text-white' : testStatus === 'error' ? 'bg-red-600 border-red-500 text-white' : 'bg-slate-700 border-slate-600 text-slate-300'}`}>
+                                            {testStatus === 'loading' ? <Icons.Loader/> : testStatus === 'success' ? <Icons.CheckCircle/> : 'PROBAR CONEXIÓN'}
                                         </button>
                                     </div>
 
-                                    <div className="space-y-4 mb-8 border-t border-slate-800 pt-6">
-                                        <label className="block text-sm font-bold text-slate-300 uppercase tracking-widest">Modelo Base Activo</label>
-                                        <select value={aiModel} onChange={e=>setAiModel(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 font-mono text-sm text-white outline-none focus:border-purple-500">
-                                            {availableModels.map(m=><option key={m} value={m}>{m}</option>)}
+                                    <div className="mb-6 border-t border-slate-700 pt-6">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <label className="text-sm font-bold text-slate-300 uppercase tracking-wide">Modelo IA Activo</label>
+                                            <span className="text-[10px] text-slate-500 font-mono">{aiModel}</span>
+                                        </div>
+                                        <select value={aiModel} onChange={(e) => setAiModel(e.target.value)} className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-white text-sm mb-4 font-mono shadow-inner focus:ring-1 focus:ring-blue-500 outline-none">
+                                            {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
                                         </select>
-                                        <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex gap-2">
-                                            <input type="text" id="newMod" placeholder="Añadir Model ID (ej: gemini-2.5-pro)..." className="flex-1 text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 text-white focus:border-purple-500 outline-none" />
-                                            <button onClick={()=>{const i=document.getElementById('newMod'); if(i.value){setAvailableModels([...availableModels, i.value]); setAiModel(i.value); i.value='';}}} className="bg-blue-600 hover:bg-blue-500 transition-all px-6 rounded-xl font-black text-[10px] uppercase text-white shadow-lg">Añadir</button>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar p-1">
-                                            {availableModels.map(m => (
-                                                <div key={m} className={`group flex items-center gap-2 px-2 py-1.5 rounded border text-[10px] font-mono transition-all ${aiModel === m ? 'bg-blue-900/30 border-blue-500 text-blue-300 shadow-md' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
-                                                    <span className="truncate max-w-[150px]">{m}</span>
-                                                    {availableModels.length > 1 && (
-                                                        <button onClick={(e) => { e.stopPropagation(); const nl = availableModels.filter(x => x !== m); setAvailableModels(nl); if(aiModel === m) setAiModel(nl[0]); }} className="text-red-500 hover:bg-red-900/20 px-1 rounded transition-colors font-bold">✕</button>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* MANUAL API (EXACTO BOLSA) */}
-                                    <div className="p-6 bg-[#1e293b] border border-[#334155] rounded-2xl shadow-inner">
-                                        <h4 className="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2"><Icons.AlertCircle/> Gestión de la API Key</h4>
-                                        <div className="mb-6 border-b border-slate-700 pb-6">
-                                            <h5 className="text-sm font-bold text-white mb-3 flex items-center gap-2"><span className="bg-green-500/20 text-green-400 px-2 py-0.5 rounded text-[10px] uppercase border border-green-500/30">Opción Gratuita</span></h5>
-                                            <ol className="list-decimal list-inside text-xs text-slate-300 space-y-2 mb-4 leading-relaxed">
-                                                <li>Accede a <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-blue-400 font-bold underline">Google AI Studio</a>.</li>
-                                                <li>Haz clic en el icono superior <strong>"Get API key"</strong> y pulsa <strong>"Create API Key"</strong>.</li>
-                                                <li>Copia la clave y pégala arriba.</li>
-                                            </ol>
-                                        </div>
-                                        <div>
-                                            <h5 className="text-sm font-bold text-white mb-3 flex items-center gap-2"><span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded text-[10px] uppercase border border-blue-500/30">Opción Ilimitada (Pago por uso)</span></h5>
-                                            <p className="text-xs text-slate-300 mb-3 leading-relaxed">Asociar una tarjeta elimina el límite de velocidad. El coste es de unos céntimos por cada millón de palabras.</p>
-                                            <div className="flex gap-3 mt-6">
-                                                <a href="https://console.cloud.google.com/billing" target="_blank" className="flex-1 text-center py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-2 shadow-lg transition-all"><Icons.ExternalLink/> 1. Crear Facturación</a>
-                                                <a href="https://aistudio.google.com/app/apikey" target="_blank" className="flex-1 text-center py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-all border border-slate-600"><Icons.ExternalLink/> 2. Vincular Clave</a>
+                                        
+                                        <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                                            <label className="block text-[10px] font-bold text-slate-500 mb-2 uppercase flex items-center gap-2"><Icons.Settings/> Gestión de Modelos</label>
+                                            <div className="flex gap-2 mb-3">
+                                                <input type="text" id="newModelInput" placeholder="ID del Modelo (Ej: gemini-1.5-pro)" className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:border-blue-500 outline-none"/>
+                                                <button onClick={() => {
+                                                    const input = document.getElementById('newModelInput');
+                                                    const val = input.value.trim();
+                                                    if(val && !availableModels.includes(val)) {
+                                                        setAvailableModels([...availableModels, val]);
+                                                        setAiModel(val);
+                                                        input.value = '';
+                                                    }
+                                                }} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-colors shadow-lg">Añadir</button>
+                                            </div>
+                                            
+                                            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scrollbar p-1">
+                                                {availableModels.map(m => (
+                                                    <div key={m} className={`group flex items-center gap-2 px-2 py-1.5 rounded border text-[10px] font-mono transition-all ${aiModel === m ? 'bg-blue-900/30 border-blue-500 text-blue-300 shadow-md' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
+                                                        <span className="truncate max-w-[150px]" title={m}>{m}</span>
+                                                        {availableModels.length > 1 && (
+                                                            <button onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const newList = availableModels.filter(x => x !== m);
+                                                                setAvailableModels(newList);
+                                                                if(aiModel === m) setAiModel(newList[0] || DEFAULT_AI_MODELS[0]);
+                                                            }} className="text-red-500 hover:text-red-300 font-bold px-1 rounded hover:bg-red-900/20 transition-colors" title="Borrar modelo">✕</button>
+                                                        )}
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div className="mt-6 p-6 bg-[#1e293b] border border-[#334155] rounded-xl relative overflow-hidden"><h4 className="text-lg font-bold text-blue-400 mb-4 flex items-center gap-2"><Icons.AlertCircle/> Gestión de la API Key (Gratis vs Pago)</h4><div className="mb-6 border-b border-slate-700 pb-6"><h5 className="text-sm font-bold text-white mb-3 flex items-center gap-2"><span className="bg-green-500/20 text-green-400 px-2 py-0.5 rounded text-[10px] uppercase border border-green-500/30">Opción Gratuita</span><span className="text-slate-400 text-xs font-normal">Ideal para uso básico</span></h5><ol className="list-decimal list-inside text-xs text-slate-300 space-y-2 mb-4 leading-relaxed"><li>Accede a <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-blue-400 hover:underline font-bold">Google AI Studio</a>.</li><li>Haz clic en el icono de las tres rallas del menú superior izquierdo <strong>"Get API key"</strong> luego abajo en <strong>"GET API Key, luego en CREAR CLAVE de API, se abre una ventana, pulsa CREAR CLAVE. Esto creará una clave y saldrá en la pantalla anterior, pulsas en la primera columna..."</strong>.</li><li>y Copia la clave y pégala arriba.</li></ol><p className="text-[10px] text-slate-400 bg-slate-900/50 p-3 rounded border border-slate-700"><strong>Límites actuales:</strong> 15 peticiones/minuto (RPM) y 1.500/día.</p></div><div>
+                                        <h5 className="text-sm font-bold text-white mb-3 flex items-center gap-2"><span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded text-[10px] uppercase border border-blue-500/30">Opción Ilimitada (Pago por uso)</span><span className="text-slate-400 text-xs font-normal">Para evitar bloqueos</span></h5>
+                                        <p className="text-xs text-slate-300 mb-3 leading-relaxed">Asociar una tarjeta elimina el límite de velocidad. El coste es de unos céntimos por cada millón de palabras.</p>
+                                        <div className="flex gap-3 mt-6">
+                                            <a href="https://console.cloud.google.com/billing" target="_blank" className="flex-1 text-center py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2 border border-blue-500 shadow-lg"><Icons.ExternalLink/> 1. Crear Facturación</a>
+                                            <a href="https://aistudio.google.com/app/apikey" target="_blank" className="flex-1 text-center py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2 border border-slate-600"><Icons.ExternalLink/> 2. Vincular Clave</a>
+                                        </div>
+                                    </div></div>
                                 </div>
 
-                                {/* 2. SYNC GDRIVE (EXACTO BOLSA CON SCRIPT ACTUALIZADO) */}
+                                {/* 2. SYNC GDRIVE */}
                                 <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl">
                                     <div className="flex items-center gap-4 mb-6 border-b border-slate-700 pb-4">
                                         <div className="p-3 bg-blue-500/20 rounded-xl text-blue-400 flex justify-center items-center"><Icons.Globe/></div>
@@ -470,17 +482,17 @@
                                     
                                     <div className="bg-slate-950/80 border border-slate-700 rounded-2xl p-6">
                                         <h5 className="text-xs font-bold text-white mb-4 flex items-center gap-2"><Icons.Settings/> Tutorial Configuración</h5>
-                                        <ol className="list-decimal list-inside text-[11px] text-slate-300 space-y-4 leading-relaxed">
-                                            <li>Ve a <a href="https://script.google.com/home" target="_blank" className="text-blue-400 font-bold underline">Google Apps Script</a> y pulsa en <strong>"Nuevo Proyecto"</strong>.</li>
-                                            <li>Borra el código y pega este bloque exacto:
-                                                <pre className="bg-black text-green-500 p-4 rounded-xl mt-3 border border-slate-800 overflow-x-auto text-[10px] font-mono select-all leading-relaxed shadow-inner">
+                                        <ol className="list-decimal list-inside text-[12px] text-slate-300 space-y-4 leading-relaxed font-sans">
+                                            <li>Ve a <a href="https://script.google.com/home" target="_blank" className="text-blue-400 font-bold hover:underline">Google Apps Script</a> y haz clic en <strong>"Nuevo Proyecto"</strong>.</li>
+                                            <li>Borra todo el código del editor y pega este bloque exacto:
+<pre className="bg-black text-green-400 p-2 rounded mt-1 mb-1 border border-slate-800 overflow-x-auto text-[11px] font-mono select-all">
 {`function A_AUTORIZAR_AQUI() { DriveApp.getFiles(); UrlFetchApp.fetch("https://www.google.com"); }
 
 function doPost(e) {
   var lock = LockService.getScriptLock(); lock.tryLock(10000);
   try {
     var data = JSON.parse(e.postData.contents);
-    var fileName = "BG_AGENTS_DB.json";
+    var fileName = "BOARDINGGATE_AGENTS_DB.json";
     var files = DriveApp.getFilesByName(fileName);
     var file = files.hasNext() ? files.next() : DriveApp.createFile(fileName, "{}", MimeType.PLAIN_TEXT);
     
@@ -489,21 +501,23 @@ function doPost(e) {
     backupFile.setContent(file.getBlob().getDataAsString());
 
     file.setContent(JSON.stringify(data));
-    return ContentService.createTextOutput("OK");
-  } catch(err) { return ContentService.createTextOutput(err.toString()); } 
+    return ContentService.createTextOutput(JSON.stringify({status:"success", ts: data.timestamp})).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) { return ContentService.createTextOutput(JSON.stringify({status:"error"})); } 
   finally { lock.releaseLock(); }
 }
 
 function doGet(e) {
-  var target = e.parameter.restoreBak === "true" ? "BG_AGENTS_DB.json.bak" : "BG_AGENTS_DB.json";
+  var target = e.parameter.restoreBak === "true" ? "BOARDINGGATE_AGENTS_DB.json.bak" : "BOARDINGGATE_AGENTS_DB.json";
   var files = DriveApp.getFilesByName(target);
   if (files.hasNext()) return ContentService.createTextOutput(files.next().getBlob().getDataAsString()).setMimeType(ContentService.MimeType.JSON);
   return ContentService.createTextOutput(JSON.stringify({timestamp:0})).setMimeType(ContentService.MimeType.JSON);
 }`}
-                                                </pre>
+</pre>
                                             </li>
-                                            <li className="text-blue-400 font-bold">IMPORTANTE: Cambia la función a "A_AUTORIZAR_AQUI" en la barra de herramientas y pulsa ▶ Ejecutar para dar permisos a Drive.</li>
-                                            <li>Pulsa <strong>Implementar > Nueva implementación > Aplicación web</strong>. Pon "Cualquier usuario" en el acceso y pega la URL en el cajón superior.</li>
+                                            <li className="bg-blue-900/80 p-2 rounded border border-blue-500/30 text-blue-200">
+                                                <strong>PASO CRÍTICO (Autorización):</strong> En la barra superior, cambia la función <code>doPost</code> por <strong><code>A_AUTORIZAR_AQUI</code></strong> y pulsa <strong>▶ Ejecutar</strong>. Autoriza tu cuenta.
+                                            </li>
+                                            <li>Pulsa <strong>"Implementar"</strong> &rarr; <strong>"Nueva implementación"</strong> &rarr; <strong>"Aplicación web"</strong>. En "Quién tiene acceso", selecciona <strong>"Cualquier usuario"</strong>. Pega la URL obtenida en el campo de arriba.</li>
                                         </ol>
                                     </div>
                                 </div>
@@ -531,17 +545,17 @@ function doGet(e) {
                                     <div className="bg-black/40 p-6 rounded-2xl border border-slate-700">
                                         <label className="block text-xs font-bold text-slate-500 mb-3 uppercase tracking-widest">Hash de Instalación</label>
                                         <div className="flex gap-3">
-                                            <input type="text" id="licInputHash" placeholder="XXXX-XXXX" className="flex-1 bg-slate-900 border border-slate-700 p-3 font-mono text-white rounded-lg focus:border-green-500 outline-none uppercase" />
-                                            <button onClick={()=>{const v=document.getElementById('licInputHash').value; if(_0x8f(v)){_s_set(_0xT); alert("SISTEMA VALIDADO");}else{alert("HASH INCORRECTO");}}} className="bg-blue-600 px-8 rounded-xl font-black text-xs uppercase hover:bg-blue-500 transition-all text-white shadow-lg">Verificar</button>
+                                            <input type="text" id="licInputHash" placeholder="XXXX-XXXX" className={`flex-1 bg-slate-900 border ${_0xAuth ? 'border-green-600' : 'border-slate-600'} rounded-lg p-3 text-white font-mono focus:outline-none uppercase`} />
+                                            <button onClick={() => { const v = document.getElementById('licInputHash').value; if(_0x8f(v)) { _s_set(_0xT); alert("R-KEY: OK."); } else { alert("R-KEY: ERR."); } }} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-xs">VERIFICAR</button>
                                         </div>
-                                        {_0xAuth && <div className="mt-4 text-green-400 text-[10px] font-black tracking-widest animate-pulse flex items-center gap-2"><Icons.Check/> SISTEMA ACTIVADO Y OPERATIVO</div>}
+                                        {_0xAuth && <div className="mt-4 text-green-400 text-[10px] font-black tracking-widest animate-pulse flex items-center gap-2"><Icons.CheckCircle/> SISTEMA ACTIVADO Y OPERATIVO</div>}
                                     </div>
                                 </div>
 
                                 {/* 5. PIE CROWDFUNDING */}
                                 <div className="text-center bg-slate-800/50 p-4 rounded-xl max-w-2xl w-full mb-10 mx-auto border border-slate-700">
                                     <p className="text-xs text-slate-400 mb-4 leading-relaxed">Esta plataforma es un proyecto independiente sustentado exclusivamente mediante <strong className="text-slate-300">crowdfunding</strong> y las aportaciones directas de sus usuarios. Tu registro ayuda a mantener los costes de desarrollo.</p>
-                                    <p className="text-xs text-slate-400 mb-2 border-t border-slate-700 pt-4">Para obtener tu Nº de registro o colaborar:</p>
+                                    <p className="text-xs text-slate-400 mb-2 border-t border-slate-700 pt-4">Para colaborar:</p>
                                     <a href="https://x.com/BoardingGate" target="_blank" className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-bold transition-colors"><Icons.Globe/> @BoardingGate en X (Twitter)</a>
                                 </div>
                             </div>
@@ -549,9 +563,9 @@ function doGet(e) {
                     </main>
 
                     <footer className="shrink-0 bg-slate-900 border-t border-slate-800 py-1.5 px-6 flex justify-between items-center text-[8px] text-slate-500 font-bold uppercase tracking-[0.2em]">
-                        <div>BoardingGate Agent v1.6 (Final Build)</div>
+                        <div>BoardingGate Agent v1.7 (Stable Build)</div>
                         <div className="flex gap-6">
-                            <span>Sincronización: {syncStatus==='synced'?'Nube Conectada':'Modo Local'}</span>
+                            <span>Sincronización: {syncStatus==='synced'?'Nube OK':'Local'}</span>
                             <span>Licencia: {_0xAuth?'ACTIVA':'RESTRINGIDA'}</span>
                         </div>
                     </footer>
