@@ -43,12 +43,17 @@
         .ai-output-container a { color: #3b82f6; text-decoration: underline; font-weight: 600; }
         
         @media print {
-            body * { visibility: hidden; }
-            #root, #root * { background: transparent !important; color: black !important; }
-            .ai-output-container, .ai-output-container * { visibility: visible; }
-            .ai-output-container { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; }
-            .no-print, header, nav, footer, button, .glass-panel:not(.ai-output-container-parent) { display: none !important; }
+                body, html { background: white !important; color: black !important; height: auto !important; overflow: visible !important; }
+                #root { display: none !important; } /* Escondemos toda la App de React */
+                
+                #print-engine { display: block !important; position: absolute; left: 0; top: 0; width: 100%; color: black !important; padding: 20px; }
+                #print-engine * { color: black !important; background: transparent !important; }
+                #print-engine h1, #print-engine h2, #print-engine h3 { color: #1e3a8a !important; border-bottom: 1px solid #ccc !important; }
+                #print-engine table { border: 1px solid black !important; width: 100%; border-collapse: collapse; }
+                #print-engine td, #print-engine th { border: 1px solid black !important; padding: 8px; }
         }
+
+
          </style>
 </head>
 <body>
@@ -242,6 +247,8 @@
                     2. DEBES integrar las perspectivas de CADA UNO de ellos en el informe final. No ignores ninguna aportación.
                     3. Usa este FORMATO DE SALIDA: ${tp.descripcion}.
                     4. EJEMPLO DE ESTILO: ${tp.ejemplo || ''}
+                    5: PROHIBIDO USAR COLORES CLAROS (Gris, Blanco, Celeste) PARA EL TEXTO. 
+                    6: EL TEXTO DEBE SER SIEMPRE NEGRO (#000000) O AZUL OSCURO (#1e3a8a).
                     
                     DATOS DE LOS ESPECIALISTAS (Materia Prima):
                     ${swarmContributions}
@@ -321,7 +328,28 @@
 
             const exportPDF=()=>{const e=document.querySelector('.ai-output-container');const o={margin:1,filename:'Informe_BG.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'in',format:'letter',orientation:'portrait'}};html2pdf().set(o).from(e).save();};
             const exportExcel=()=>{const e=document.querySelector('.ai-output-container');const ws=XLSX.utils.table_to_sheet(e.querySelector('table')||XLSX.utils.aoa_to_sheet([[e.innerText]]));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Informe");XLSX.writeFile(wb,"Informe_BG.xlsx");};
-            const exportWord=()=>{const e=document.querySelector('.ai-output-container').innerHTML;const s='<style>body{font-family:Arial;font-size:11pt;}h1,h2,h3{color:#1e3a8a;text-transform:uppercase;border-bottom:1px solid #ccc;}table{width:100%;border-collapse:collapse;margin:15px 0;}th{background-color:#f1f5f9;border:1px solid #000;padding:8px;text-align:left;}td{border:1px solid #000;padding:8px;}</style>';const b=new Blob(['<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8">'+s+'</head><body>',e,'</body></html>'],{type:'application/msword'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='Informe_BG.doc';a.click();};
+            const exportWord = () => {
+                const content = document.querySelector('.ai-output-container').innerHTML;
+                const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><meta charset='utf-8'><style>
+                    body { font-family: 'Calibri', sans-serif; line-height: 1.5; }
+                    h1, h2, h3 { color: #1e3a8a; text-transform: uppercase; border-bottom: 1px solid #444; padding-bottom: 5px; }
+                    table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+                    th, td { border: 1px solid #000; padding: 10px; text-align: left; }
+                    th { background-color: #f2f2f2; font-weight: bold; }
+                    ul, ol { margin-left: 20px; }
+                </style></head><body>`;
+                const footer = "</body></html>";
+                const source = header + content + footer;
+                
+                const blob = new Blob([source], { type: 'application/msword' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'Informe_Estrategico_BG.doc';
+                link.click();
+                URL.revokeObjectURL(url);
+            };
 
             useEffect(() => { downloadFromCloud(); }, []);
 
@@ -405,8 +433,15 @@
                                                     <button onClick={exportPDF} className="text-[8px] font-black bg-red-900/30 hover:bg-red-900/50 text-red-400 px-2 py-1.5 rounded border border-red-500/30 uppercase">PDF</button>
                                                     <button onClick={exportExcel} className="text-[8px] font-black bg-green-900/30 hover:bg-green-900/50 text-green-400 px-2 py-1.5 rounded border border-green-500/30 uppercase">Excel</button>
                                                     <button onClick={exportWord} className="text-[8px] font-black bg-blue-900/30 hover:bg-blue-900/50 text-blue-400 px-2 py-1.5 rounded border border-blue-500/30 uppercase">Word</button>
-                                                    <button onClick={()=>window.print()} className="text-[8px] font-black bg-purple-900/30 hover:bg-purple-900/50 text-purple-400 px-2 py-1.5 rounded border border-purple-500/30 uppercase">Imprimir</button>
-                                                </div>                                            
+                                                    <button onClick={()=>{
+                                                        const content = document.querySelector('.ai-output-container').innerHTML;
+                                                        let pArea = document.getElementById('print-engine');
+                                                        if(!pArea) { pArea = document.createElement('div'); pArea.id = 'print-engine'; document.body.appendChild(pArea); }
+                                                        pArea.innerHTML = content;
+                                                        window.print();
+                                                        pArea.innerHTML = '';
+                                                    }} className="text-[8px] font-black bg-purple-900/30 hover:bg-purple-900/50 text-purple-400 px-2 py-1.5 rounded border border-purple-500/30 uppercase">Imprimir</button>      
+                                            </div>                                            
                                         </div>
                                         <div className="ai-output-container" dangerouslySetInnerHTML={{ __html: resultado }}></div>
                                     </div>
