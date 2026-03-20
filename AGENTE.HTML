@@ -240,7 +240,7 @@
                     const res = await callGemini(finalPrompt, aiModel);
                     setResultado(res.replace(/```html/g, '').replace(/```/g, '').trim());
                     
-                    setPeticionHistory(p=>[{id:Date.now(),texto:peticion,desc:'['+new Date().toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+'] '+peticion.substring(0,60)+'...'},...p].slice(0,20));
+                    setPeticionHistory(p=>[{id:Date.now(),texto:peticion,desc:'['+new Date().toLocaleString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+'] '+peticion.substring(0,60)+'...'},...p].slice(0,20));
                     uploadToCloud(true);
                 } catch(e) { alert(e.message); } finally { setLoading(false); setStatusMsg(''); }
             };
