@@ -207,12 +207,12 @@
                     setStatusMsg("Red de Seguridad: Validando datos...");
                     let contextDoc = "";
                     for(const f of archivos) contextDoc += `\n- ARCHIVO ADJUNTO: ${f.name}\n${await extractTextFromFile(f)}\n`;
-                    
+
                     const planningPrompt = `HOY ES: ${hoy}. PETICIÓN: "${peticion}". 
-                    Agentes: ${JSON.stringify(agents.map(a=>a.nombre))}. Formatos: ${JSON.stringify(templates.map(t=>t.nombre))}. 
-                    Decide qué especialistas (máximo 5) deben colaborar para un resultado experto. 
-                    JSON: {"valid":boolean, "error_msg":"string", "selected_agents":["nombre1", "nombre2"], "plantilla":"nombre", "internet":boolean, "query":"string"}`;
-                    
+                    Agentes disponibles: ${JSON.stringify(agents.map(a=>a.nombre))}. Plantillas: ${JSON.stringify(templates.map(t=>t.nombre))}. 
+                    EVALUACIÓN ESTRICTA: Selecciona SOLO a los agentes que sean indispensables. Si la tarea la puede hacer 1 solo agente, selecciona SOLO 1. MÁXIMO ABSOLUTO 5. No añadas agentes cuyo perfil no aporte valor directo.
+                    RESPONDE SOLO ESTE JSON: {"valid":boolean, "error_msg":"string", "selected_agents":["nombre1"], "plantilla":"nombre", "internet":boolean, "query":"string"}`;
+
                     const planningRes = await callGemini(planningPrompt, aiModel);
                     const decision = JSON.parse(planningRes.match(/\{[\s\S]*\}/)[0]);
                     
@@ -248,19 +248,18 @@
                     3. Usa este FORMATO DE SALIDA: ${tp.descripcion}.
                     4. EJEMPLO DE ESTILO: ${tp.ejemplo || ''}
                     5: PROHIBIDO USAR COLORES CLAROS (Gris, Blanco, Celeste) PARA EL TEXTO. 
-                    6: EL TEXTO DEBE SER SIEMPRE NEGRO (#000000) O AZUL OSCURO (#1e3a8a).
+                    6: EL TEXTO DEBE SER SIEMPRE NEGRO (#000000) O AZUL OSCURO (#1e3a8a) SOBRE FONDO BLANCO.
                     
                     DATOS DE LOS ESPECIALISTAS (Materia Prima):
                     ${swarmContributions}
 
                     PETICION DEL CLIENTE: ${peticion}. 
 
-                    INSTRUCCIONES DE REDACCIÓN:
-                    - Genera un documento único y profesional.
-                    - No menciones "El agente X dijo...". Fusiona el conocimiento.
-                    - No pongas introducciones, saludos ni conclusiones vacías. 
-                    - Comienza directamente con el contenido técnico en HTML semántico profesional.`;
-                    
+                    INSTRUCCIONES FINALES: Unifica todo.
+                    REGLA 1: PRIORIZA DATOS TÉCNICOS.
+                    REGLA 2: SIN INTRODUCCIONES.
+                    REGLA 3: SALIDA EN HTML SEMÁNTICO (<h1>, <p>, <table>, etc).
+                    REGLA 4: ESTRICTAMENTE PROHIBIDO usar estilos CSS en línea (NO uses style="color:..."). La plataforma aplicará los colores sola.`;               
                     
                     const res = await callGemini(finalPrompt, aiModel);
                     setResultado(res.replace(/```html/g, '').replace(/```/g, '').trim());
@@ -328,29 +327,10 @@
 
             const exportPDF=()=>{const e=document.querySelector('.ai-output-container');const o={margin:1,filename:'Informe_BG.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'in',format:'letter',orientation:'portrait'}};html2pdf().set(o).from(e).save();};
             const exportExcel=()=>{const e=document.querySelector('.ai-output-container');const ws=XLSX.utils.table_to_sheet(e.querySelector('table')||XLSX.utils.aoa_to_sheet([[e.innerText]]));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Informe");XLSX.writeFile(wb,"Informe_BG.xlsx");};
-            const exportWord = () => {
-                const content = document.querySelector('.ai-output-container').innerHTML;
-                const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-                <head><meta charset='utf-8'><style>
-                    body { font-family: 'Calibri', sans-serif; line-height: 1.5; }
-                    h1, h2, h3 { color: #1e3a8a; text-transform: uppercase; border-bottom: 1px solid #444; padding-bottom: 5px; }
-                    table { border-collapse: collapse; width: 100%; margin: 20px 0; }
-                    th, td { border: 1px solid #000; padding: 10px; text-align: left; }
-                    th { background-color: #f2f2f2; font-weight: bold; }
-                    ul, ol { margin-left: 20px; }
-                </style></head><body>`;
-                const footer = "</body></html>";
-                const source = header + content + footer;
-                
-                const blob = new Blob([source], { type: 'application/msword' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = 'Informe_Estrategico_BG.doc';
-                link.click();
-                URL.revokeObjectURL(url);
-            };
+            const exportWord=()=>{const e=document.querySelector('.ai-output-container').innerHTML;const h=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;color:black;}table{border-collapse:collapse;width:100%;}td,th{border:1px solid black;padding:8px;}h1,h2,h3{color:#1e3a8a;}</style></head><body>`;const b=new Blob([h+e+'</body></html>'],{type:'application/msword'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='Informe_BG.doc';a.click();};
+            const handlePrint=()=>{const c=document.querySelector('.ai-output-container').innerHTML;const i=document.createElement('iframe');i.style.display='none';document.body.appendChild(i);const p=i.contentWindow;p.document.open();p.document.write('<html><head><style>body{font-family:sans-serif;color:black;padding:20px;line-height:1.5}h1,h2,h3{color:#1e3a8a;border-bottom:1px solid #ccc;text-transform:uppercase}table{width:100%;border-collapse:collapse;margin:15px 0}th,td{border:1px solid black;padding:8px;text-align:left}th{background:#f1f5f9}</style></head><body>'+c+'</body></html>');p.document.close();p.focus();setTimeout(()=>{p.print();document.body.removeChild(i);},500);};
 
+        
             useEffect(() => { downloadFromCloud(); }, []);
 
             if(isPinLocked) {
@@ -389,7 +369,7 @@
                                     <div className="flex justify-between items-center text-xs font-black uppercase text-blue-400 tracking-widest">
                                         <span>Entrada de Misión</span>
                                         <div className="flex gap-4">
-                                            <button onClick={()=>setPeticion('')} className="text-[9px] text-red-500 font-black uppercase tracking-widest">Limpiar Misión</button>
+                                            <button onClick={()=>{setPeticion(''); setArchivos([]);}} className="text-[9px] text-red-500 font-black uppercase tracking-widest">Limpiar Misión</button>
                                             <select value={aiModel} onChange={e=>setAiModel(e.target.value)} className="text-[10px] font-bold px-3 py-1 bg-slate-900 border-slate-700 text-white outline-none">
                                                 {availableModels.map(m=><option key={m} value={m}>{m}</option>)}
                                             </select>
@@ -433,14 +413,7 @@
                                                     <button onClick={exportPDF} className="text-[8px] font-black bg-red-900/30 hover:bg-red-900/50 text-red-400 px-2 py-1.5 rounded border border-red-500/30 uppercase">PDF</button>
                                                     <button onClick={exportExcel} className="text-[8px] font-black bg-green-900/30 hover:bg-green-900/50 text-green-400 px-2 py-1.5 rounded border border-green-500/30 uppercase">Excel</button>
                                                     <button onClick={exportWord} className="text-[8px] font-black bg-blue-900/30 hover:bg-blue-900/50 text-blue-400 px-2 py-1.5 rounded border border-blue-500/30 uppercase">Word</button>
-                                                    <button onClick={()=>{
-                                                        const content = document.querySelector('.ai-output-container').innerHTML;
-                                                        let pArea = document.getElementById('print-engine');
-                                                        if(!pArea) { pArea = document.createElement('div'); pArea.id = 'print-engine'; document.body.appendChild(pArea); }
-                                                        pArea.innerHTML = content;
-                                                        window.print();
-                                                        pArea.innerHTML = '';
-                                                    }} className="text-[8px] font-black bg-purple-900/30 hover:bg-purple-900/50 text-purple-400 px-2 py-1.5 rounded border border-purple-500/30 uppercase">Imprimir</button>      
+                                                    <button onClick={handlePrint} className="text-[8px] font-black bg-purple-900/30 hover:bg-purple-900/50 text-purple-400 px-2 py-1.5 rounded border border-purple-500/30 uppercase">Imprimir</button>
                                             </div>                                            
                                         </div>
                                         <div className="ai-output-container" dangerouslySetInnerHTML={{ __html: resultado }}></div>
