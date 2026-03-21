@@ -34,14 +34,6 @@
         input, select, textarea { background: #1e293b; border: 1px solid #334155; color: white; border-radius: 6px; padding: 8px; transition: all 0.2s; font-size: 14px; }
         .active-tab { background-color: #2563eb; color: white; box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); }
 
-        /* Formateo de salida de iA */
-        .ai-output-container { font-family: 'Inter', sans-serif; color: #e2e8f0; line-height: 1.6; }
-        .ai-output-container h1, .ai-output-container h2, .ai-output-container h3 { color: #60a5fa; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-top: 24px; font-weight: 700; text-transform: uppercase; }
-        .ai-output-container table { width: 100%; border-collapse: collapse; margin: 20px 0; background: rgba(30, 41, 59, 0.5); }
-        .ai-output-container th { background: #1e293b; color: #93c5fd; padding: 12px; border: 1px solid #334155; text-align: left; }
-        .ai-output-container td { padding: 12px; border: 1px solid #334155; }
-        .ai-output-container ul { list-style: disc; padding-left: 25px; margin: 15px 0; }
-        .ai-output-container a { color: #3b82f6; text-decoration: underline; font-weight: 600; }
         
         @media print {
                 body, html { background: white !important; color: black !important; height: auto !important; overflow: visible !important; }
@@ -53,6 +45,23 @@
                 #print-engine table { border: 1px solid black !important; width: 100%; border-collapse: collapse; }
                 #print-engine td, #print-engine th { border: 1px solid black !important; padding: 8px; }
         }
+
+        .ai-output-container { 
+            font-family: 'Times New Roman', serif; 
+            color: #000 !important; 
+            line-height: 1.6; 
+            background: #fff !important; 
+            padding: 30px; 
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+           .ai-output-container h1, .ai-output-container h2, .ai-output-container h3 { color: #60a5fa; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-top: 24px; font-weight: 700; text-transform: uppercase; }
+                .ai-output-container table { width: 100%; border-collapse: collapse; margin: 20px 0; background: rgba(30, 41, 59, 0.5); }
+                .ai-output-container th { background: #1e293b; color: #93c5fd; padding: 12px; border: 1px solid #334155; text-align: left; }
+                .ai-output-container td { padding: 12px; border: 1px solid #334155; }
+                .ai-output-container ul { list-style: disc; padding-left: 25px; margin: 15px 0; }
+                .ai-output-container a { color: #3b82f6; text-decoration: underline; font-weight: 600; }
+             
 
         .report-preview {
                 background: white !important;
@@ -386,38 +395,38 @@ const extractTextFromFile = async (file) => {
             const exportExcel=()=>{const e=document.querySelector('.ai-output-container');const ws=XLSX.utils.table_to_sheet(e.querySelector('table')||XLSX.utils.aoa_to_sheet([[e.innerText]]));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Informe");XLSX.writeFile(wb,"Informe_BG.xlsx");};
             const exportWord=()=>{const e=document.querySelector('.ai-output-container').innerHTML;const h=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;color:black;}table{border-collapse:collapse;width:100%;}td,th{border:1px solid black;padding:8px;}h1,h2,h3{color:#1e3a8a;}</style></head><body>`;const b=new Blob([h+e+'</body></html>'],{type:'application/msword'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='Informe_BG.doc';a.click();};
           
-            const handlePrint = (contentRef) => {
-                    // contentRef debe ser el ID del div o el contenido HTML
-                    const content = typeof contentRef === 'string' ? contentRef : document.getElementById(contentRef).innerHTML;
-                    
-                    const printWindow = window.open('', '_blank', 'width=900,height=800');
-                    printWindow.document.write(`
-                        <html>
-                            <head>
-                                <style>
-                                    body { font-family: sans-serif; padding: 20px; }
-                                    .report-preview { background: white !important; color: black !important; }
-                                    table { border-collapse: collapse; width: 100%; }
-                                    td, th { border: 1px solid #333; padding: 8px; color: black !important; }
-                                    h1, h2, h3 { color: #1e3a8a !important; }
-                                </style>
-                            </head>
-                            <body>
-                                <div class="report-preview">
-                                    ${content}
-                                </div>
-                            </body>
-                        </html>
-                    `);
-                    
-                    printWindow.document.close();
-                    // Forzamos el renderizado antes de imprimir
-                    setTimeout(() => {
-                        printWindow.focus();
-                        printWindow.print();
-                        printWindow.close();
-                    }, 1000);
-                };
+const handlePrint = () => {
+    const content = document.querySelector('.ai-output-container').innerHTML;
+    const printWindow = window.open('', '_blank', 'width=900,height=800');
+    
+    printWindow.document.write(`
+        <html>
+            <head>
+                <style>
+                    body { font-family: 'Times New Roman', serif; padding: 40px; color: black; background: white; }
+                    .ai-output-container { color: black; line-height: 1.6; }
+                    h1, h2, h3 { color: #1e3a8a !important; border-bottom: 1px solid #ccc; padding-bottom: 8px; }
+                    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                    th { background: #f3f4f6; color: black; padding: 12px; border: 1px solid #000; text-align: left; }
+                    td { padding: 12px; border: 1px solid #000; }
+                    ul { list-style: disc; padding-left: 25px; }
+                </style>
+            </head>
+            <body>
+                <div class="ai-output-container">
+                    ${content}
+                </div>
+            </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+    setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+    }, 500);
+};
 
             useEffect(() => { downloadFromCloud(); }, []);
 
